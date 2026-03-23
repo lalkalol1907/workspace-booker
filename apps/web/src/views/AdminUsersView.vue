@@ -15,6 +15,7 @@ import TableHead from '@/components/ui/table/TableHead.vue';
 import TableHeader from '@/components/ui/table/TableHeader.vue';
 import TableRow from '@/components/ui/table/TableRow.vue';
 import { ApiError, http } from '@/api/http';
+import { copyTextToClipboard } from '@/utils/clipboard';
 import type { InviteUserResponse, UserSummary } from '@/api/types';
 import { useAuthStore } from '@/stores/auth';
 import { useTenantContextStore } from '@/stores/tenant-context';
@@ -106,11 +107,11 @@ async function submitInvite() {
 
 async function copyPassword() {
   const t = inviteResult.value?.temporaryPassword;
-  if (!t || !navigator.clipboard?.writeText) {
+  if (!t) {
     return;
   }
   try {
-    await navigator.clipboard.writeText(t);
+    await copyTextToClipboard(t);
     toast.success('Пароль скопирован');
   } catch {
     toast.error('Не удалось скопировать');
