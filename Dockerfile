@@ -1,7 +1,6 @@
 ARG NODE_VERSION=25
 
 FROM node:${NODE_VERSION}-alpine AS base
-# corepack есть не во всех окружениях; pnpm через npm стабильнее в Docker
 RUN npm install -g pnpm@10.29.2
 WORKDIR /app
 
@@ -29,6 +28,7 @@ EXPOSE 3000
 CMD ["node", "dist/main.js"]
 
 FROM nginx:1.27-alpine AS web
-COPY docker/nginx-web.conf /etc/nginx/conf.d/default.conf
+ENV API_UPSTREAM=api:3000
+COPY docker/nginx-web.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 EXPOSE 80
