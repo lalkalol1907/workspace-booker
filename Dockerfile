@@ -28,7 +28,11 @@ EXPOSE 3000
 CMD ["node", "dist/main.js"]
 
 FROM nginx:1.27-alpine AS web
+RUN apk add --no-cache gettext
 ENV API_UPSTREAM=api:3000
-COPY docker/nginx-web.conf.template /etc/nginx/templates/default.conf.template
+COPY docker/nginx-web.conf.template /etc/nginx/default.conf.template
+COPY docker/web-entrypoint.sh /web-entrypoint.sh
+RUN chmod +x /web-entrypoint.sh
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 EXPOSE 80
+ENTRYPOINT ["/web-entrypoint.sh"]
