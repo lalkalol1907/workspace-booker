@@ -1,7 +1,8 @@
 ARG NODE_VERSION=25
 
 FROM node:${NODE_VERSION}-alpine AS base
-RUN corepack enable && corepack prepare pnpm@10.29.2 --activate
+# corepack есть не во всех окружениях; pnpm через npm стабильнее в Docker
+RUN npm install -g pnpm@10.29.2
 WORKDIR /app
 
 FROM base AS deps
