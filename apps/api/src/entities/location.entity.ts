@@ -30,7 +30,10 @@ export class Location {
   @Column({ name: 'parent_id', type: 'uuid', nullable: true })
   parentId!: string | null;
 
-  @ManyToOne(() => Location, (l) => l.children, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Location, (l) => l.children, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'parent_id' })
   parent!: Location | null;
 

@@ -42,8 +42,13 @@ onMounted(async () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow v-for="row in rows" :key="row.id">
-            <TableCell class="font-medium">{{ row.name }}</TableCell>
+          <TableRow
+            v-for="row in rows"
+            :key="row.id"
+          >
+            <TableCell class="font-medium">
+              {{ row.name }}
+            </TableCell>
             <TableCell>{{ resourceTypeLabel(row.type) }}</TableCell>
             <TableCell>{{ row.capacity }}</TableCell>
             <TableCell>{{ row.isActive ? 'да' : 'нет' }}</TableCell>

@@ -65,7 +65,10 @@ function onCancel() {
         >
           {{ description }}
         </AlertDialogDescription>
-        <AlertDialogDescription v-else class="sr-only">
+        <AlertDialogDescription
+          v-else
+          class="sr-only"
+        >
           {{ title }}
         </AlertDialogDescription>
         <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

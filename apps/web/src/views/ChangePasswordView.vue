@@ -57,7 +57,10 @@ async function submit() {
           Установите новый пароль для входа. Временный пароль больше не будет
           действовать.
         </p>
-        <form class="space-y-4" @submit.prevent="submit">
+        <form
+          class="space-y-4"
+          @submit.prevent="submit"
+        >
           <div class="space-y-2">
             <Label for="cur-pw">Текущий пароль</Label>
             <Input
@@ -85,7 +88,11 @@ async function submit() {
               autocomplete="new-password"
             />
           </div>
-          <Button type="submit" class="w-full" :disabled="loading">
+          <Button
+            type="submit"
+            class="w-full"
+            :disabled="loading"
+          >
             {{ loading ? 'Сохранение…' : 'Сохранить' }}
           </Button>
         </form>

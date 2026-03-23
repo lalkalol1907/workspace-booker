@@ -124,7 +124,12 @@ function parentOptions() {
   <div>
     <div class="mb-4 flex items-center justify-between gap-4">
       <h1>Локации</h1>
-      <Button type="button" @click="openCreate">Добавить</Button>
+      <Button
+        type="button"
+        @click="openCreate"
+      >
+        Добавить
+      </Button>
     </div>
     <div class="relative rounded-md border">
       <LoadingOverlay v-if="loading" />
@@ -133,12 +138,19 @@ function parentOptions() {
           <TableRow>
             <TableHead>Название</TableHead>
             <TableHead>Родитель</TableHead>
-            <TableHead class="w-[100px] text-right">Действия</TableHead>
+            <TableHead class="w-[100px] text-right">
+              Действия
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow v-for="row in rows" :key="row.id">
-            <TableCell class="font-medium">{{ row.name }}</TableCell>
+          <TableRow
+            v-for="row in rows"
+            :key="row.id"
+          >
+            <TableCell class="font-medium">
+              {{ row.name }}
+            </TableCell>
             <TableCell>
               {{ rows.find((r) => r.id === row.parentId)?.name ?? '—' }}
             </TableCell>
@@ -173,15 +185,29 @@ function parentOptions() {
       v-model:open="dialog"
       :title="editingId ? 'Редактировать' : 'Новая локация'"
     >
-      <form id="loc-form" class="space-y-4" @submit.prevent="save">
+      <form
+        id="loc-form"
+        class="space-y-4"
+        @submit.prevent="save"
+      >
         <div class="space-y-2">
           <Label for="loc-name">Название</Label>
-          <Input id="loc-name" v-model="form.name" required />
+          <Input
+            id="loc-name"
+            v-model="form.name"
+            required
+          />
         </div>
         <div class="space-y-2">
           <Label for="loc-parent">Родитель (необязательно)</Label>
-          <select id="loc-parent" v-model="form.parentId" :class="selectClass">
-            <option value="">—</option>
+          <select
+            id="loc-parent"
+            v-model="form.parentId"
+            :class="selectClass"
+          >
+            <option value="">
+              —
+            </option>
             <option
               v-for="p in parentOptions()"
               :key="p.id"
@@ -193,10 +219,19 @@ function parentOptions() {
         </div>
       </form>
       <template #footer>
-        <Button type="button" variant="outline" @click="dialog = false">
+        <Button
+          type="button"
+          variant="outline"
+          @click="dialog = false"
+        >
           Отмена
         </Button>
-        <Button type="submit" form="loc-form">Сохранить</Button>
+        <Button
+          type="submit"
+          form="loc-form"
+        >
+          Сохранить
+        </Button>
       </template>
     </FormDialog>
 

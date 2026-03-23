@@ -29,7 +29,10 @@ const linkActiveClass = 'bg-accent font-medium text-accent-foreground';
 
 <template>
   <div class="flex min-h-0 flex-1 overflow-hidden">
-    <Toaster rich-colors position="top-center" />
+    <Toaster
+      rich-colors
+      position="top-center"
+    />
     <aside
       v-if="showSidebar"
       class="flex w-[220px] shrink-0 flex-col overflow-hidden border-r border-border bg-card"
@@ -89,10 +92,14 @@ const linkActiveClass = 'bg-accent font-medium text-accent-foreground';
         </template>
       </nav>
       <div class="shrink-0 space-y-3 border-t border-border p-4">
-        <div v-if="auth.isSuperAdmin" class="space-y-1.5">
-          <label class="text-xs font-medium text-muted-foreground" for="tenant-org"
-            >Организация</label
-          >
+        <div
+          v-if="auth.isSuperAdmin"
+          class="space-y-1.5"
+        >
+          <label
+            class="text-xs font-medium text-muted-foreground"
+            for="tenant-org"
+          >Организация</label>
           <select
             id="tenant-org"
             class="flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -103,7 +110,11 @@ const linkActiveClass = 'bg-accent font-medium text-accent-foreground';
               )
             "
           >
-            <option v-if="!tenant.organizations.length" value="" disabled>
+            <option
+              v-if="!tenant.organizations.length"
+              value=""
+              disabled
+            >
               Нет организаций
             </option>
             <option

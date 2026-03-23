@@ -50,7 +50,11 @@ export class Booking {
   @Column({ type: 'varchar', length: 500 })
   title!: string;
 
-  @Column({ type: 'enum', enum: BookingStatus, default: BookingStatus.CONFIRMED })
+  @Column({
+    type: 'enum',
+    enum: BookingStatus,
+    default: BookingStatus.CONFIRMED,
+  })
   status!: BookingStatus;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

@@ -29,19 +29,11 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  async login(
-    dto: LoginDto,
-    requestHost: string,
-  ): Promise<TokenResponseDto> {
+  async login(dto: LoginDto, requestHost: string): Promise<TokenResponseDto> {
     const host = normalizeTenantHost(requestHost);
     const fallback = this.config.get<string>('DEFAULT_TENANT_HOST');
-    let org = host
-      ? await this.orgRepo.findOne({ where: { host } })
-      : null;
-    if (
-      !org &&
-      (host === '127.0.0.1' || host === '::1')
-    ) {
+    let org = host ? await this.orgRepo.findOne({ where: { host } }) : null;
+    if (!org && (host === '127.0.0.1' || host === '::1')) {
       org = await this.orgRepo.findOne({ where: { host: 'localhost' } });
     }
     if (!org && fallback) {

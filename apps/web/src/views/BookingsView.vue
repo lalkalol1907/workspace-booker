@@ -52,17 +52,27 @@ async function cancelRow(id: string) {
             <TableHead>Начало</TableHead>
             <TableHead>Конец</TableHead>
             <TableHead>Статус</TableHead>
-            <TableHead class="w-[72px] text-right">Действия</TableHead>
+            <TableHead class="w-[72px] text-right">
+              Действия
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-if="!rows.length && !loading">
-            <TableCell colspan="6" class="h-24 text-center text-muted-foreground">
+            <TableCell
+              colspan="6"
+              class="h-24 text-center text-muted-foreground"
+            >
               Нет броней
             </TableCell>
           </TableRow>
-          <TableRow v-for="row in rows" :key="row.id">
-            <TableCell class="font-medium">{{ row.resourceName }}</TableCell>
+          <TableRow
+            v-for="row in rows"
+            :key="row.id"
+          >
+            <TableCell class="font-medium">
+              {{ row.resourceName }}
+            </TableCell>
             <TableCell>{{ row.title }}</TableCell>
             <TableCell>{{ new Date(row.startsAt).toLocaleString() }}</TableCell>
             <TableCell>{{ new Date(row.endsAt).toLocaleString() }}</TableCell>

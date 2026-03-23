@@ -10,9 +10,9 @@ import type { JwtPayload } from '../interfaces/jwt-payload.interface';
 /** Tenant org for the request: JWT org for normal users, X-Organization-Id for platform admin. */
 export const CurrentTenantOrg = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): string => {
-    const req = ctx.switchToHttp().getRequest<
-      FastifyRequest & { user: JwtPayload }
-    >();
+    const req = ctx
+      .switchToHttp()
+      .getRequest<FastifyRequest & { user: JwtPayload }>();
     const user = req.user;
     if (user.role === UserRole.SUPER_ADMIN) {
       const raw = req.headers['x-organization-id'];

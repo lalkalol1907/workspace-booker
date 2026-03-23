@@ -43,7 +43,10 @@ defineProps<{
         >
           {{ description }}
         </DialogDescription>
-        <DialogDescription v-else class="sr-only">
+        <DialogDescription
+          v-else
+          class="sr-only"
+        >
           {{ title }}
         </DialogDescription>
         <slot />

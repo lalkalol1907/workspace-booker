@@ -48,7 +48,10 @@ export class ResourcesService {
     return rows.map((r) => this.toDto(r));
   }
 
-  async findOne(organizationId: string, id: string): Promise<ResourceResponseDto> {
+  async findOne(
+    organizationId: string,
+    id: string,
+  ): Promise<ResourceResponseDto> {
     const r = await this.repo.findOne({ where: { id, organizationId } });
     if (!r) {
       throw new NotFoundException();

@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -72,7 +65,9 @@ export class AuthController {
   @Post('password')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('jwt')
-  @ApiOperation({ summary: 'Change password (required when mustChangePassword is true)' })
+  @ApiOperation({
+    summary: 'Change password (required when mustChangePassword is true)',
+  })
   @ApiBody({ type: ChangePasswordDto })
   @ApiOkResponse({ description: 'Password updated' })
   @ApiUnauthorizedResponse()

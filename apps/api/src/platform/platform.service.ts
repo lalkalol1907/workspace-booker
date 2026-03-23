@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserRole } from '../common/enums/user-role.enum';
 import { normalizeTenantHost } from '../common/utils/tenant-host';
 import { Organization } from '../entities/organization.entity';
 import { User } from '../entities/user.entity';

@@ -239,9 +239,21 @@ watch(resourceId, () => {
       или нажмите «Новая бронь» — время можно уточнить в окне.
     </p>
     <div class="mb-4 flex flex-wrap items-center gap-3">
-      <select v-model="resourceId" :class="selectClass">
-        <option value="" disabled>Ресурс</option>
-        <option v-for="r in resources" :key="r.id" :value="r.id">
+      <select
+        v-model="resourceId"
+        :class="selectClass"
+      >
+        <option
+          value=""
+          disabled
+        >
+          Ресурс
+        </option>
+        <option
+          v-for="r in resources"
+          :key="r.id"
+          :value="r.id"
+        >
           {{ r.name }}
         </option>
       </select>
@@ -284,7 +296,11 @@ watch(resourceId, () => {
       title="Новая бронь"
       description="Укажите название и время. При выделении слота на календаре время подставляется автоматически."
     >
-      <form id="booking-form" class="space-y-4" @submit.prevent="createBooking">
+      <form
+        id="booking-form"
+        class="space-y-4"
+        @submit.prevent="createBooking"
+      >
         <div class="space-y-2">
           <Label for="book-title">Название</Label>
           <Input
@@ -303,7 +319,7 @@ watch(resourceId, () => {
               v-model="bookingStart"
               type="datetime-local"
               :class="inputClass"
-            />
+            >
           </div>
           <div class="space-y-2">
             <Label for="book-end">Конец</Label>
@@ -312,7 +328,7 @@ watch(resourceId, () => {
               v-model="bookingEnd"
               type="datetime-local"
               :class="inputClass"
-            />
+            >
           </div>
         </div>
       </form>
@@ -324,7 +340,11 @@ watch(resourceId, () => {
         >
           Отмена
         </Button>
-        <Button type="submit" form="booking-form" :disabled="loading">
+        <Button
+          type="submit"
+          form="booking-form"
+          :disabled="loading"
+        >
           {{ loading ? 'Сохранение…' : 'Забронировать' }}
         </Button>
       </template>

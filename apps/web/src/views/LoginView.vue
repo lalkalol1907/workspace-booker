@@ -47,7 +47,10 @@ async function submit() {
           Доступ выдаётся администратором. Если у вас нет учётной записи,
           обратитесь к нему.
         </p>
-        <form class="space-y-4" @submit.prevent="submit">
+        <form
+          class="space-y-4"
+          @submit.prevent="submit"
+        >
           <div class="space-y-2">
             <Label for="email">Email</Label>
             <Input
@@ -66,7 +69,11 @@ async function submit() {
               autocomplete="current-password"
             />
           </div>
-          <Button type="submit" class="w-full" :disabled="loading">
+          <Button
+            type="submit"
+            class="w-full"
+            :disabled="loading"
+          >
             {{ loading ? 'Вход…' : 'Войти' }}
           </Button>
         </form>

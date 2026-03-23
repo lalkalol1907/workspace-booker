@@ -205,18 +205,26 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
         <p class="mt-2 max-w-xl text-sm text-muted-foreground">
           Удаление пользователя навсегда убирает его и все его брони в этой
           организации.
-          <span v-if="auth.isSuperAdmin" class="block pt-1">
+          <span
+            v-if="auth.isSuperAdmin"
+            class="block pt-1"
+          >
             Как админ платформы вы можете назначать администраторов организации
             в колонке «Роль».
           </span>
         </p>
       </div>
-      <Button type="button" @click="openInviteModal">
+      <Button
+        type="button"
+        @click="openInviteModal"
+      >
         Пригласить пользователя
       </Button>
     </div>
 
-    <h2 class="mb-3 text-lg font-semibold">Список</h2>
+    <h2 class="mb-3 text-lg font-semibold">
+      Список
+    </h2>
     <div class="relative rounded-md border">
       <LoadingOverlay v-if="listLoading" />
       <Table>
@@ -224,12 +232,19 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
           <TableRow>
             <TableHead>Email</TableHead>
             <TableHead>Имя</TableHead>
-            <TableHead class="min-w-[200px]">Роль</TableHead>
-            <TableHead class="w-[72px] text-right">Действия</TableHead>
+            <TableHead class="min-w-[200px]">
+              Роль
+            </TableHead>
+            <TableHead class="w-[72px] text-right">
+              Действия
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow v-for="row in rows" :key="row.id">
+          <TableRow
+            v-for="row in rows"
+            :key="row.id"
+          >
             <TableCell>{{ row.email }}</TableCell>
             <TableCell>{{ row.displayName }}</TableCell>
             <TableCell>
@@ -247,8 +262,12 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
                   )
                 "
               >
-                <option value="member">Участник</option>
-                <option value="admin">Администратор</option>
+                <option value="member">
+                  Участник
+                </option>
+                <option value="admin">
+                  Администратор
+                </option>
               </select>
               <span v-else>{{ roleLabel(row.role) }}</span>
             </TableCell>
@@ -264,7 +283,10 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
               >
                 <Trash2 class="size-4" />
               </Button>
-              <span v-else class="text-xs text-muted-foreground">—</span>
+              <span
+                v-else
+                class="text-xs text-muted-foreground"
+              >—</span>
             </TableCell>
           </TableRow>
         </TableBody>
@@ -276,7 +298,11 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
       title="Пригласить пользователя"
       description="Будет создан участник с временным паролем. Сохраните пароль из следующего окна."
     >
-      <form id="invite-form" class="space-y-4" @submit.prevent="submitInvite">
+      <form
+        id="invite-form"
+        class="space-y-4"
+        @submit.prevent="submitInvite"
+      >
         <div class="space-y-2">
           <Label for="inv-email">Email</Label>
           <Input
@@ -289,7 +315,11 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
         </div>
         <div class="space-y-2">
           <Label for="inv-name">Имя (необязательно)</Label>
-          <Input id="inv-name" v-model="displayName" autocomplete="off" />
+          <Input
+            id="inv-name"
+            v-model="displayName"
+            autocomplete="off"
+          />
         </div>
       </form>
       <template #footer>
@@ -300,14 +330,24 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
         >
           Отмена
         </Button>
-        <Button type="submit" form="invite-form" :disabled="inviteLoading">
+        <Button
+          type="submit"
+          form="invite-form"
+          :disabled="inviteLoading"
+        >
           {{ inviteLoading ? 'Создание…' : 'Выдать доступ' }}
         </Button>
       </template>
     </FormDialog>
 
-    <FormDialog v-model:open="resultOpen" title="Доступ выдан">
-      <div v-if="inviteResult" class="space-y-3 text-sm">
+    <FormDialog
+      v-model:open="resultOpen"
+      title="Доступ выдан"
+    >
+      <div
+        v-if="inviteResult"
+        class="space-y-3 text-sm"
+      >
         <p>
           <span class="text-muted-foreground">Email:</span>
           {{ inviteResult.email }}
@@ -318,12 +358,21 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
             class="ml-2 rounded bg-muted px-2 py-0.5 font-mono text-xs"
           >{{ inviteResult.temporaryPassword }}</code>
         </p>
-        <Button type="button" variant="outline" @click="copyPassword">
+        <Button
+          type="button"
+          variant="outline"
+          @click="copyPassword"
+        >
           Скопировать пароль
         </Button>
       </div>
       <template #footer>
-        <Button type="button" @click="resultOpen = false">Закрыть</Button>
+        <Button
+          type="button"
+          @click="resultOpen = false"
+        >
+          Закрыть
+        </Button>
       </template>
     </FormDialog>
 

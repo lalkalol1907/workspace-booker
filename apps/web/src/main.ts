@@ -9,11 +9,12 @@ import 'vue-sonner/style.css';
 import './style.css';
 
 async function main() {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const app = createApp(App);
   const pinia = createPinia();
   app.use(pinia);
   app.use(router);
-  setTenantHeadersProvider(() => {
+  setTenantHeadersProvider((): Record<string, string> => {
     const auth = useAuthStore();
     const tenant = useTenantContextStore();
     if (

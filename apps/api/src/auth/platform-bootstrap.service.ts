@@ -39,6 +39,8 @@ export class PlatformBootstrapService implements OnModuleInit {
         mustChangePassword: false,
       }),
     );
-    this.log.log('Created initial platform admin from PLATFORM_BOOTSTRAP_* env');
+    this.log.log(
+      'Created initial platform admin from PLATFORM_BOOTSTRAP_* env',
+    );
   }
 }

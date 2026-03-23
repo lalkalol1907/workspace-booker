@@ -41,9 +41,7 @@ export class PlatformController {
   @Roles(UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'List all tenants' })
   @ApiOkResponse({ type: OrganizationSummaryDto, isArray: true })
-  listOrganizations(
-    @CurrentUser() _user: JwtPayload,
-  ): Promise<OrganizationSummaryDto[]> {
+  listOrganizations(): Promise<OrganizationSummaryDto[]> {
     return this.platform.listOrganizations();
   }
 

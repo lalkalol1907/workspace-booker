@@ -19,5 +19,5 @@ const attrs = useAttrs();
       )
     "
     v-bind="attrs"
-  />
+  >
 </template>

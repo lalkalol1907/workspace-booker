@@ -133,7 +133,12 @@ async function confirmDeactivate() {
   <div>
     <div class="mb-4 flex items-center justify-between gap-4">
       <h1>Ресурсы</h1>
-      <Button type="button" @click="openCreate">Добавить</Button>
+      <Button
+        type="button"
+        @click="openCreate"
+      >
+        Добавить
+      </Button>
     </div>
     <div class="relative rounded-md border">
       <LoadingOverlay v-if="loading" />
@@ -145,12 +150,19 @@ async function confirmDeactivate() {
             <TableHead>Вместимость</TableHead>
             <TableHead>Локация</TableHead>
             <TableHead>Активен</TableHead>
-            <TableHead class="w-[100px] text-right">Действия</TableHead>
+            <TableHead class="w-[100px] text-right">
+              Действия
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow v-for="row in rows" :key="row.id">
-            <TableCell class="font-medium">{{ row.name }}</TableCell>
+          <TableRow
+            v-for="row in rows"
+            :key="row.id"
+          >
+            <TableCell class="font-medium">
+              {{ row.name }}
+            </TableCell>
             <TableCell>{{ resourceTypeLabel(row.type) }}</TableCell>
             <TableCell>{{ row.capacity }}</TableCell>
             <TableCell>
@@ -189,7 +201,11 @@ async function confirmDeactivate() {
       v-model:open="dialog"
       :title="editingId ? 'Редактировать' : 'Новый ресурс'"
     >
-      <form id="resource-form" class="space-y-4" @submit.prevent="save">
+      <form
+        id="resource-form"
+        class="space-y-4"
+        @submit.prevent="save"
+      >
         <div class="space-y-2">
           <Label for="res-loc">Локация</Label>
           <select
@@ -198,18 +214,30 @@ async function confirmDeactivate() {
             required
             :class="selectClass"
           >
-            <option v-for="l in locations" :key="l.id" :value="l.id">
+            <option
+              v-for="l in locations"
+              :key="l.id"
+              :value="l.id"
+            >
               {{ l.name }}
             </option>
           </select>
         </div>
         <div class="space-y-2">
           <Label for="res-name">Название</Label>
-          <Input id="res-name" v-model="form.name" required />
+          <Input
+            id="res-name"
+            v-model="form.name"
+            required
+          />
         </div>
         <div class="space-y-2">
           <Label for="res-type">Тип</Label>
-          <select id="res-type" v-model="form.type" :class="selectClass">
+          <select
+            id="res-type"
+            v-model="form.type"
+            :class="selectClass"
+          >
             <option
               v-for="t in resourceTypeOptions"
               :key="t.value"
@@ -227,14 +255,23 @@ async function confirmDeactivate() {
             type="number"
             min="1"
             :class="selectClass"
-          />
+          >
         </div>
       </form>
       <template #footer>
-        <Button type="button" variant="outline" @click="dialog = false">
+        <Button
+          type="button"
+          variant="outline"
+          @click="dialog = false"
+        >
           Отмена
         </Button>
-        <Button type="submit" form="resource-form">Сохранить</Button>
+        <Button
+          type="submit"
+          form="resource-form"
+        >
+          Сохранить
+        </Button>
       </template>
     </FormDialog>
 

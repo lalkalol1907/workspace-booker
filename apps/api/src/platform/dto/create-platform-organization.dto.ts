@@ -13,7 +13,9 @@ export class CreatePlatformOrganizationDto {
   @Length(1, 128)
   slug!: string;
 
-  @ApiProperty({ description: 'Hostname for this tenant (e.g. booker.acme.com)' })
+  @ApiProperty({
+    description: 'Hostname for this tenant (e.g. booker.acme.com)',
+  })
   @IsString()
   @Length(1, 255)
   host!: string;
