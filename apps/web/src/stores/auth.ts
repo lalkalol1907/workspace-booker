@@ -48,6 +48,16 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchMe();
   }
 
+  /** Вход суперадмина платформы (без привязки к host тенанта). */
+  async function platformLogin(payload: { email: string; password: string }) {
+    const res = await http<TokenResponse>('/auth/platform/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    setToken(res.accessToken);
+    await fetchMe();
+  }
+
   async function changePassword(payload: {
     currentPassword: string;
     newPassword: string;
@@ -84,6 +94,7 @@ export const useAuthStore = defineStore('auth', () => {
     isSuperAdmin,
     isAdmin,
     login,
+    platformLogin,
     changePassword,
     logout,
     fetchMe,

@@ -56,6 +56,12 @@ const router = createRouter({
       component: () => import('@/views/AdminUsersView.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
     },
+    {
+      path: '/platform/tenants',
+      name: 'platform-tenants',
+      component: () => import('@/views/PlatformTenantsView.vue'),
+      meta: { requiresAuth: true, requiresPlatformAdmin: true },
+    },
   ],
 });
 
@@ -83,6 +89,9 @@ router.beforeEach((to) => {
     return { name: 'change-password', query: { redirect: to.fullPath } };
   }
   if (to.meta.requiresAdmin && !auth.isAdmin) {
+    return { name: 'calendar' };
+  }
+  if (to.meta.requiresPlatformAdmin && !auth.isSuperAdmin) {
     return { name: 'calendar' };
   }
   return true;

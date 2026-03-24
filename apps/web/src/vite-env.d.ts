@@ -7,5 +7,7 @@ declare module 'vue-router' {
     guest?: boolean;
     requiresAuth?: boolean;
     requiresAdmin?: boolean;
+    /** Только super_admin (управление тенантами платформы). */
+    requiresPlatformAdmin?: boolean;
   }
 }

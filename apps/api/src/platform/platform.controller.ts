@@ -26,6 +26,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { CreatePlatformOrganizationDto } from './dto/create-platform-organization.dto';
 import { OrganizationSummaryDto } from './dto/organization-summary.dto';
+import { UpdatePlatformOrganizationDto } from './dto/update-platform-organization.dto';
 import { UpdatePlatformUserRoleDto } from './dto/update-platform-user-role.dto';
 import { PlatformService } from './platform.service';
 
@@ -56,6 +57,20 @@ export class PlatformController {
     @Body() dto: CreatePlatformOrganizationDto,
   ): Promise<OrganizationSummaryDto> {
     return this.platform.createOrganization(dto);
+  }
+
+  @Patch('organizations/:organizationId')
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update tenant' })
+  @ApiBody({ type: UpdatePlatformOrganizationDto })
+  @ApiOkResponse({ type: OrganizationSummaryDto })
+  @ApiConflictResponse({ description: 'Slug or host already in use' })
+  updateOrganization(
+    @CurrentUser() _user: JwtPayload,
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+    @Body() dto: UpdatePlatformOrganizationDto,
+  ): Promise<OrganizationSummaryDto> {
+    return this.platform.updateOrganization(organizationId, dto);
   }
 
   @Patch('organizations/:organizationId/users/:userId/role')

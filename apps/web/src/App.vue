@@ -62,6 +62,20 @@ const linkActiveClass = 'bg-accent font-medium text-accent-foreground';
         >
           Мои брони
         </RouterLink>
+        <template v-if="auth.isSuperAdmin">
+          <p
+            class="px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            Платформа
+          </p>
+          <RouterLink
+            to="/platform/tenants"
+            :class="linkClass"
+            :active-class="linkActiveClass"
+          >
+            Организации
+          </RouterLink>
+        </template>
         <template v-if="auth.isAdmin">
           <p
             class="px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"

@@ -10,6 +10,7 @@ import { Organization } from '../entities/organization.entity';
 import { User } from '../entities/user.entity';
 import { CreatePlatformOrganizationDto } from './dto/create-platform-organization.dto';
 import { OrganizationSummaryDto } from './dto/organization-summary.dto';
+import { UpdatePlatformOrganizationDto } from './dto/update-platform-organization.dto';
 import { UpdatePlatformUserRoleDto } from './dto/update-platform-user-role.dto';
 
 @Injectable()
@@ -44,6 +45,31 @@ export class PlatformService {
       slug,
       host,
     });
+    await this.orgRepo.save(org);
+    return this.toSummary(org);
+  }
+
+  async updateOrganization(
+    id: string,
+    dto: UpdatePlatformOrganizationDto,
+  ): Promise<OrganizationSummaryDto> {
+    const org = await this.orgRepo.findOne({ where: { id } });
+    if (!org) {
+      throw new NotFoundException();
+    }
+    const host = normalizeTenantHost(dto.host) || dto.host.trim().toLowerCase();
+    const slug = dto.slug.toLowerCase();
+    const otherSlug = await this.orgRepo.findOne({ where: { slug } });
+    if (otherSlug && otherSlug.id !== id) {
+      throw new ConflictException('Slug already in use');
+    }
+    const otherHost = await this.orgRepo.findOne({ where: { host } });
+    if (otherHost && otherHost.id !== id) {
+      throw new ConflictException('Host already in use');
+    }
+    org.name = dto.name.trim();
+    org.slug = slug;
+    org.host = host;
     await this.orgRepo.save(org);
     return this.toSummary(org);
   }
