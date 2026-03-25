@@ -12,9 +12,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'pwa-192.svg', 'pwa-512.svg'],
       manifest: {
-        name: 'Workspace Booker',
-        short_name: 'Booker',
-        description: 'Workspace booking with calendar and admin tools',
+        name: 'Бронирование рабочих мест',
+        short_name: 'Бронирование',
+        description: 'Календарь и бронирование ресурсов',
         theme_color: '#5a6cff',
         background_color: '#eef2ff',
         display: 'standalone',

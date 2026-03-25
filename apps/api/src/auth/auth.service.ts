@@ -74,13 +74,17 @@ export class AuthService {
   async me(payload: JwtPayload): Promise<MeResponseDto> {
     let user: User | null;
     if (payload.role === UserRole.SUPER_ADMIN) {
-      user = await this.userRepo.findOne({ where: { id: payload.sub } });
+      user = await this.userRepo.findOne({
+        where: { id: payload.sub },
+        relations: ['organization'],
+      });
     } else {
       if (!payload.organizationId) {
         throw new UnauthorizedException();
       }
       user = await this.userRepo.findOne({
         where: { id: payload.sub, organizationId: payload.organizationId },
+        relations: ['organization'],
       });
     }
     if (!user) {
@@ -92,6 +96,7 @@ export class AuthService {
       displayName: user.displayName,
       role: user.role,
       mustChangePassword: user.mustChangePassword,
+      organizationName: user.organization?.name ?? null,
     };
   }
 

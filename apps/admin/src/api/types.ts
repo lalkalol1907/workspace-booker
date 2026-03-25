@@ -10,6 +10,7 @@ export interface MeResponse {
   displayName: string;
   role: UserRole;
   mustChangePassword: boolean;
+  organizationName: string | null;
 }
 
 export interface OrganizationSummary {

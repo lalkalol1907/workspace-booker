@@ -18,4 +18,11 @@ export class MeResponseDto {
     description: 'If true, user must set a new password before using the app.',
   })
   mustChangePassword!: boolean;
+
+  @ApiProperty({
+    nullable: true,
+    description:
+      'Tenant organization name. Null for platform super_admin without a linked org.',
+  })
+  organizationName!: string | null;
 }

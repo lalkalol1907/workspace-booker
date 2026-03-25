@@ -10,6 +10,8 @@ export interface MeResponse {
   displayName: string;
   role: UserRole;
   mustChangePassword: boolean;
+  /** Имя организации; для super_admin с аккаунта платформы обычно null. */
+  organizationName: string | null;
 }
 
 export interface InviteUserResponse {

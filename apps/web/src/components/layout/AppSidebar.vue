@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useTenantContextStore } from '@/stores/tenant-context';
+import { userInitialsFromDisplayName } from '@/utils/user-initials';
 
 const auth = useAuthStore();
 const tenant = useTenantContextStore();
@@ -10,17 +12,18 @@ const linkClass =
   'block rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground';
 const linkActiveClass = 'bg-accent font-medium text-accent-foreground';
 
-function shortOrgName(name: string, max = 17): string {
-  if (name.length <= max) {
-    return name;
-  }
-  return `${name.slice(0, max).trimEnd()}...`;
-}
+const selectedOrg = computed(() =>
+  tenant.organizations.find((o) => o.id === tenant.selectedOrgId),
+);
+
+const userInitials = computed(() =>
+  userInitialsFromDisplayName(auth.user?.displayName),
+);
 </script>
 
 <template>
   <aside
-    class="glass-panel hidden w-[240px] shrink-0 flex-col overflow-hidden md:flex"
+    class="glass-panel hidden w-[272px] shrink-0 flex-col overflow-hidden md:flex"
   >
     <div class="border-b border-border/70 px-5 py-4 text-sm font-semibold">
       Навигация
@@ -77,16 +80,17 @@ function shortOrgName(name: string, max = 17): string {
     <div class="space-y-3 border-t border-border/70 p-3">
       <div
         v-if="auth.isSuperAdmin"
-        class="space-y-1.5 px-3"
+        class="space-y-2 rounded-xl border border-border/60 bg-background/40 px-3 py-3"
       >
         <label
-          class="text-xs font-medium text-muted-foreground"
+          class="block text-xs font-medium text-muted-foreground"
           for="tenant-org"
         >Организация</label>
         <select
           id="tenant-org"
-          class="select-glass flex h-9 w-full rounded-xl border border-input bg-background/70 px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="select-glass h-10 w-full min-w-0 max-w-full rounded-xl border border-input bg-background/80 px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           :value="tenant.selectedOrgId ?? ''"
+          :title="selectedOrg?.name ?? ''"
           @change="
             tenant.setSelectedOrgId(
               ($event.target as HTMLSelectElement).value || null,
@@ -106,15 +110,28 @@ function shortOrgName(name: string, max = 17): string {
             :value="o.id"
             :title="o.name"
           >
-            {{ shortOrgName(o.name) }}
+            {{ o.name }}
           </option>
         </select>
       </div>
       <div
-        class="truncate px-3 text-xs text-muted-foreground"
+        class="flex gap-3 rounded-xl border border-primary/25 bg-gradient-to-br from-primary/12 via-background/50 to-background/30 px-3 py-3 shadow-sm ring-1 ring-inset ring-primary/10"
         :title="auth.user?.email ?? ''"
       >
-        {{ auth.user?.displayName ?? '' }}
+        <div
+          class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-sm font-bold tracking-tight text-primary"
+          aria-hidden="true"
+        >
+          {{ userInitials }}
+        </div>
+        <div class="min-w-0 flex-1 py-0.5">
+          <p class="truncate text-sm font-semibold leading-snug text-foreground">
+            {{ auth.user?.displayName ?? 'Пользователь' }}
+          </p>
+          <p class="mt-0.5 truncate text-xs leading-relaxed text-muted-foreground">
+            {{ auth.user?.email ?? '' }}
+          </p>
+        </div>
       </div>
     </div>
   </aside>
