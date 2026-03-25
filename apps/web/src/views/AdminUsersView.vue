@@ -17,10 +17,8 @@ import TableRow from '@/components/ui/table/TableRow.vue';
 import { ApiError, http } from '@/api/http';
 import type { InviteUserResponse, UserSummary } from '@/api/types';
 import { useAuthStore } from '@/stores/auth';
-import { useTenantContextStore } from '@/stores/tenant-context';
 
 const auth = useAuthStore();
-const tenant = useTenantContextStore();
 
 const inviteModalOpen = ref(false);
 const email = ref('');
@@ -229,15 +227,9 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
   if (currentRole === role) {
     return;
   }
-  const orgId = tenant.selectedOrgId;
-  if (!orgId) {
-    toast.error('Выберите организацию в селекторе');
-    return;
-  }
-
   roleUpdatingId.value = row.id;
   try {
-    await http<void>(`/platform/organizations/${orgId}/users/${row.id}/role`, {
+    await http<void>(`/users/${row.id}/role`, {
       method: 'PATCH',
       body: JSON.stringify({ role }),
     });

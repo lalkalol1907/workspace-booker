@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
@@ -30,7 +31,51 @@ export class PlatformService {
     private readonly orgHostRepo: Repository<OrganizationHost>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private readonly config: ConfigService,
   ) {}
+
+  private normalizeEnvHost(raw: string): string {
+    const trimmed = raw.trim().toLowerCase();
+    if (!trimmed) {
+      return '';
+    }
+    if (trimmed.includes('://')) {
+      try {
+        return new URL(trimmed).hostname.trim().toLowerCase();
+      } catch {
+        // fallback to generic parsing below
+      }
+    }
+    return trimmed.split('/')[0]?.replace(/:\d+$/, '') ?? '';
+  }
+
+  private getReservedPlatformHosts(): string[] {
+    const raw = [
+      this.config.get<string>('PLATFORM_HOST') ?? '',
+      this.config.get<string>('PLATFORM_URL') ?? '',
+    ];
+    const unique = new Set<string>();
+    for (const v of raw) {
+      const n = this.normalizeEnvHost(v);
+      if (n) {
+        unique.add(n);
+      }
+    }
+    return [...unique];
+  }
+
+  private assertHostsNotReserved(hosts: string[]): void {
+    const reserved = this.getReservedPlatformHosts();
+    if (reserved.length === 0) {
+      return;
+    }
+    const conflict = hosts.find((h) => reserved.includes(h));
+    if (conflict) {
+      throw new BadRequestException(
+        `Host ${conflict} is reserved for platform and cannot be used by tenant`,
+      );
+    }
+  }
 
   private generateTemporaryPassword(): string {
     return randomBytes(12).toString('base64url').slice(0, 16);
@@ -113,6 +158,7 @@ export class PlatformService {
     if (hosts.length === 0) {
       throw new BadRequestException('At least one valid host is required');
     }
+    this.assertHostsNotReserved(hosts);
     const slug = dto.slug.toLowerCase();
     const slugTaken = await this.orgRepo.exist({ where: { slug } });
     if (slugTaken) {
@@ -153,6 +199,7 @@ export class PlatformService {
     if (hosts.length === 0) {
       throw new BadRequestException('At least one valid host is required');
     }
+    this.assertHostsNotReserved(hosts);
     const slug = dto.slug.toLowerCase();
     const otherSlug = await this.orgRepo.findOne({ where: { slug } });
     if (otherSlug && otherSlug.id !== id) {

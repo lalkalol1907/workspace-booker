@@ -13,6 +13,7 @@ import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { User } from '../entities/user.entity';
 import { InviteUserDto } from './dto/invite-user.dto';
 import type { InviteUserResponseDto } from './dto/invite-user-response.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UserSummaryDto } from './dto/user-summary.dto';
 
 function generateTemporaryPassword(): string {
@@ -121,5 +122,30 @@ export class UsersService {
       displayName: target.displayName,
       temporaryPassword: tempPlain,
     };
+  }
+
+  async updateRole(
+    actor: JwtPayload,
+    organizationId: string,
+    userId: string,
+    dto: UpdateUserRoleDto,
+  ): Promise<void> {
+    if (actor.role !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException();
+    }
+    const target = await this.userRepo.findOne({
+      where: { id: userId, organizationId },
+    });
+    if (!target) {
+      throw new NotFoundException();
+    }
+    if (target.role === UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException();
+    }
+    if (target.id === actor.sub) {
+      throw new ForbiddenException();
+    }
+    target.role = dto.role;
+    await this.userRepo.save(target);
   }
 }

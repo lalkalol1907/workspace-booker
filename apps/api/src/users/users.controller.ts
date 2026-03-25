@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -32,6 +33,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { InviteUserResponseDto } from './dto/invite-user-response.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UserSummaryDto } from './dto/user-summary.dto';
 import { UsersService } from './users.service';
 
@@ -109,5 +111,25 @@ export class UsersController {
     @Body() dto: InviteUserDto,
   ): Promise<InviteUserResponseDto> {
     return this.users.invite(user, organizationId, dto);
+  }
+
+  @Patch(':id/role')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Set tenant user role (admin / member)',
+    description:
+      'Only platform super_admin can change tenant user roles from tenant app.',
+  })
+  @ApiBody({ type: UpdateUserRoleDto })
+  @ApiOkResponse({ description: 'Updated' })
+  @ApiNotFoundResponse()
+  @ApiForbiddenResponse()
+  updateRole(
+    @CurrentUser() user: JwtPayload,
+    @CurrentTenantOrg() organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateUserRoleDto,
+  ): Promise<void> {
+    return this.users.updateRole(user, organizationId, id, dto);
   }
 }

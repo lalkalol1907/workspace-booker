@@ -126,6 +126,8 @@ async function submitCreate() {
   } catch (e: unknown) {
     if (e instanceof ApiError && e.status === 409) {
       toast.error('Slug или один из доменов уже заняты');
+    } else if (e instanceof ApiError && e.status === 400) {
+      toast.error(e.message || 'Некорректные данные организации');
     } else {
       toast.error('Не удалось создать организацию');
     }
@@ -160,6 +162,8 @@ async function submitEdit() {
   } catch (e: unknown) {
     if (e instanceof ApiError && e.status === 409) {
       toast.error('Slug или один из доменов уже заняты');
+    } else if (e instanceof ApiError && e.status === 400) {
+      toast.error(e.message || 'Некорректные данные организации');
     } else {
       toast.error('Не удалось обновить организацию');
     }
@@ -206,8 +210,11 @@ async function submitPlatformAdmin() {
 </script>
 
 <template>
-  <div class="space-y-8">
-    <section class="rounded-xl border bg-white p-5 shadow-sm">
+  <div class="space-y-6">
+    <section
+      id="platform-admins"
+      class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm"
+    >
       <h2 class="mb-4 text-lg font-semibold">Админы платформы</h2>
       <form
         class="grid gap-3 md:grid-cols-3"
@@ -217,18 +224,18 @@ async function submitPlatformAdmin() {
           v-model="adminEmail"
           type="email"
           placeholder="email"
-          class="rounded-md border border-slate-300 px-3 py-2"
+          class="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none ring-slate-200 focus:ring"
           required
         >
         <input
           v-model="adminDisplayName"
           placeholder="Имя (необязательно)"
-          class="rounded-md border border-slate-300 px-3 py-2"
+          class="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none ring-slate-200 focus:ring"
         >
         <div>
           <button
             type="submit"
-            class="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-500 disabled:opacity-60"
+            class="rounded-md border border-slate-900 bg-slate-900 px-4 py-2 text-white hover:bg-black disabled:opacity-60"
             :disabled="adminSaving"
           >
             {{ adminSaving ? 'Сохранение...' : 'Добавить / повысить' }}
@@ -237,7 +244,7 @@ async function submitPlatformAdmin() {
       </form>
       <div
         v-if="adminResult"
-        class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm"
+        class="mt-4 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm"
       >
         <p>
           <strong>Результат:</strong>
@@ -285,12 +292,15 @@ async function submitPlatformAdmin() {
       </div>
     </section>
 
-    <section class="rounded-xl border bg-white p-5 shadow-sm">
-      <h1 class="mb-2 text-2xl font-semibold">Организации платформы</h1>
-      <p class="text-sm text-slate-600">Создание и редактирование тенантов.</p>
+    <section class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm">
+      <h1 class="mb-2 text-2xl font-semibold tracking-tight">Организации платформы</h1>
+      <p class="text-sm text-slate-600">Строгое управление доменами, slug и структурой тенантов.</p>
     </section>
 
-    <section class="rounded-xl border bg-white p-5 shadow-sm">
+    <section
+      id="create-tenant"
+      class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm"
+    >
       <h2 class="mb-4 text-lg font-semibold">Создать организацию</h2>
       <form
         class="grid gap-4 md:grid-cols-2"
@@ -299,13 +309,13 @@ async function submitPlatformAdmin() {
         <input
           v-model="createName"
           placeholder="Название"
-          class="rounded-md border border-slate-300 px-3 py-2"
+          class="rounded-md border border-slate-300 bg-white px-3 py-2 outline-none ring-slate-200 focus:ring"
           required
         >
         <input
           v-model="createSlug"
           placeholder="slug"
-          class="rounded-md border border-slate-300 px-3 py-2"
+          class="rounded-md border border-slate-300 bg-white px-3 py-2 outline-none ring-slate-200 focus:ring"
           required
         >
         <div class="md:col-span-2">
@@ -313,7 +323,7 @@ async function submitPlatformAdmin() {
             <label class="text-xs font-medium text-slate-600">Домены (вход по хосту)</label>
             <button
               type="button"
-              class="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+              class="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
               @click="addCreateHostField"
             >
               <span class="text-base leading-none">+</span>
@@ -330,7 +340,7 @@ async function submitPlatformAdmin() {
                 v-model="createHostFields[index]"
                 type="text"
                 :placeholder="index === 0 ? 'booker.example.com' : 'дополнительный домен'"
-                class="min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
+                class="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm outline-none ring-slate-200 focus:ring"
                 autocomplete="off"
               >
               <button
@@ -351,7 +361,7 @@ async function submitPlatformAdmin() {
         <div class="md:col-span-2">
           <button
             type="submit"
-            class="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-500 disabled:opacity-60"
+            class="rounded-md border border-slate-900 bg-slate-900 px-4 py-2 text-white hover:bg-black disabled:opacity-60"
             :disabled="creating"
           >
             {{ creating ? 'Создание...' : 'Создать' }}
@@ -360,12 +370,15 @@ async function submitPlatformAdmin() {
       </form>
     </section>
 
-    <section class="rounded-xl border bg-white p-5 shadow-sm">
+    <section
+      id="tenant-list"
+      class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm"
+    >
       <div class="mb-3 flex items-center justify-between">
         <h2 class="text-lg font-semibold">Список</h2>
         <button
           type="button"
-          class="rounded-md border px-3 py-1.5 text-sm hover:bg-slate-100"
+          class="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
           @click="loadOrganizations"
         >
           Обновить
@@ -384,7 +397,7 @@ async function submitPlatformAdmin() {
       >
         <table class="w-full border-collapse text-sm">
           <thead>
-            <tr class="border-b bg-slate-50">
+            <tr class="border-y border-slate-300 bg-slate-100">
               <th class="px-3 py-2 text-left">
                 Название
               </th>
@@ -403,7 +416,7 @@ async function submitPlatformAdmin() {
             <tr
               v-for="row in rows"
               :key="row.id"
-              class="border-b"
+              class="border-b border-slate-200"
             >
               <td class="px-3 py-2">
                 {{ row.name }}
@@ -419,7 +432,7 @@ async function submitPlatformAdmin() {
               <td class="px-3 py-2 text-right">
                 <button
                   type="button"
-                  class="rounded-md border px-3 py-1.5 hover:bg-slate-100"
+                  class="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
                   @click="openEdit(row)"
                 >
                   Редактировать
@@ -445,13 +458,13 @@ async function submitPlatformAdmin() {
           <input
             v-model="editName"
             placeholder="Название"
-            class="w-full rounded-md border border-slate-300 px-3 py-2"
+            class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 outline-none ring-slate-200 focus:ring"
             required
           >
           <input
             v-model="editSlug"
             placeholder="slug"
-            class="w-full rounded-md border border-slate-300 px-3 py-2"
+            class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 outline-none ring-slate-200 focus:ring"
             required
           >
           <div>
@@ -459,7 +472,7 @@ async function submitPlatformAdmin() {
               <label class="text-xs font-medium text-slate-600">Домены</label>
               <button
                 type="button"
-                class="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+                class="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
                 @click="addEditHostField"
               >
                 <span class="text-base leading-none">+</span>
@@ -475,7 +488,7 @@ async function submitPlatformAdmin() {
                 <input
                   v-model="editHostFields[index]"
                   type="text"
-                  class="min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
+                  class="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm outline-none ring-slate-200 focus:ring"
                   autocomplete="off"
                 >
                 <button
@@ -496,14 +509,14 @@ async function submitPlatformAdmin() {
           <div class="flex justify-end gap-2">
             <button
               type="button"
-              class="rounded-md border px-3 py-1.5 hover:bg-slate-100"
+              class="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
               @click="editOpen = false"
             >
               Отмена
             </button>
             <button
               type="submit"
-              class="rounded-md bg-indigo-600 px-4 py-1.5 text-white hover:bg-indigo-500 disabled:opacity-60"
+              class="rounded-md border border-slate-900 bg-slate-900 px-4 py-1.5 text-white hover:bg-black disabled:opacity-60"
               :disabled="updatingId === editId"
             >
               Сохранить
