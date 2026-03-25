@@ -53,6 +53,7 @@ export interface ResourceDto {
   name: string;
   type: ResourceType;
   capacity: number;
+  maxBookingMinutes: number | null;
   isActive: boolean;
   metadata: Record<string, unknown> | null;
   createdAt: string;

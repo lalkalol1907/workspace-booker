@@ -33,6 +33,7 @@ const form = reactive({
   name: '',
   type: 'room' as ResourceType,
   capacity: 1,
+  maxBookingMinutes: null as number | null,
 });
 
 const confirmOpen = ref(false);
@@ -60,6 +61,7 @@ function openCreate() {
   form.name = '';
   form.type = 'room';
   form.capacity = 1;
+  form.maxBookingMinutes = null;
   dialog.value = true;
 }
 
@@ -69,6 +71,7 @@ function openEdit(row: ResourceDto) {
   form.name = row.name;
   form.type = row.type;
   form.capacity = row.capacity;
+  form.maxBookingMinutes = row.maxBookingMinutes ?? null;
   dialog.value = true;
 }
 
@@ -77,6 +80,11 @@ async function save() {
     toast.warning('Заполните поля');
     return;
   }
+  const maxBookingMinutes =
+    typeof form.maxBookingMinutes === 'number' &&
+    Number.isFinite(form.maxBookingMinutes)
+      ? form.maxBookingMinutes
+      : null;
   try {
     if (editingId.value) {
       await http(`/resources/${editingId.value}`, {
@@ -86,6 +94,7 @@ async function save() {
           name: form.name.trim(),
           type: form.type,
           capacity: form.capacity,
+          maxBookingMinutes,
         }),
       });
     } else {
@@ -96,6 +105,7 @@ async function save() {
           name: form.name.trim(),
           type: form.type,
           capacity: form.capacity,
+          maxBookingMinutes,
         }),
       });
     }
@@ -157,6 +167,9 @@ async function confirmDeactivate() {
             <TableHead>Название</TableHead>
             <TableHead>Тип</TableHead>
             <TableHead>Вместимость</TableHead>
+            <TableHead class="whitespace-nowrap">
+              Макс. бронь
+            </TableHead>
             <TableHead>Локация</TableHead>
             <TableHead>Активен</TableHead>
             <TableHead class="w-[100px] text-right">
@@ -174,6 +187,12 @@ async function confirmDeactivate() {
             </TableCell>
             <TableCell>{{ resourceTypeLabel(row.type) }}</TableCell>
             <TableCell>{{ row.capacity }}</TableCell>
+            <TableCell class="tabular-nums text-muted-foreground">
+              <template v-if="row.maxBookingMinutes != null">
+                {{ row.maxBookingMinutes }} мин
+              </template>
+              <span v-else>—</span>
+            </TableCell>
             <TableCell>
               {{ locations.find((l) => l.id === row.locationId)?.name ?? '—' }}
             </TableCell>
@@ -264,6 +283,17 @@ async function confirmDeactivate() {
             type="number"
             min="1"
             :class="selectClass"
+          >
+        </div>
+        <div class="space-y-2">
+          <Label for="res-max-booking">Макс. длительность брони (мин.)</Label>
+          <input
+            id="res-max-booking"
+            v-model.number="form.maxBookingMinutes"
+            type="number"
+            min="1"
+            :class="selectClass"
+            placeholder="Без ограничения"
           >
         </div>
       </form>

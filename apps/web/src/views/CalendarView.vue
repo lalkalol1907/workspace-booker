@@ -66,6 +66,49 @@ const slotMaxTime = computed(() =>
 );
 const scrollTime = computed(() => (fromMidnight.value ? '00:00:00' : '08:00:00'));
 
+const selectedResource = computed(
+  () => resources.value.find((r) => r.id === resourceId.value) ?? null,
+);
+
+const bookingModalDescription = computed(() => {
+  const base =
+    'Укажите название и время. При выделении слота на календаре время подставляется автоматически.';
+  const max = selectedResource.value?.maxBookingMinutes;
+  if (max == null) {
+    return base;
+  }
+  return `${base} Максимальная длительность одной брони для выбранного ресурса — ${max} мин.`;
+});
+
+/** Длительность интервала в миллисекундах или null, если даты не заданы или некорректны */
+const bookingDurationMs = computed(() => {
+  if (!bookingStart.value || !bookingEnd.value) {
+    return null;
+  }
+  const start = new Date(bookingStart.value);
+  const end = new Date(bookingEnd.value);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+    return null;
+  }
+  return end.getTime() - start.getTime();
+});
+
+const bookingDurationMinutesDisplay = computed(() => {
+  if (bookingDurationMs.value == null) {
+    return null;
+  }
+  return Math.floor(bookingDurationMs.value / 60_000);
+});
+
+/** Совпадает с проверкой на API: длительность строго больше лимита */
+const bookingExceedsMaxDuration = computed(() => {
+  const max = selectedResource.value?.maxBookingMinutes;
+  if (max == null || bookingDurationMs.value == null) {
+    return false;
+  }
+  return bookingDurationMs.value > max * 60 * 1000;
+});
+
 watch(
   isMdUp,
   (md) => {
@@ -216,6 +259,16 @@ async function createBooking() {
   }
   if (end <= start) {
     toast.warning('Конец должен быть позже начала');
+    return;
+  }
+  const maxMin = selectedResource.value?.maxBookingMinutes;
+  if (
+    maxMin != null &&
+    end.getTime() - start.getTime() > maxMin * 60 * 1000
+  ) {
+    toast.warning(
+      `Длительность брони не может превышать ${maxMin} мин. для этого ресурса`,
+    );
     return;
   }
   loading.value = true;
@@ -530,7 +583,7 @@ watch(resourceId, () => {
     <FormDialog
       v-model:open="bookingModalOpen"
       title="Новая бронь"
-      description="Укажите название и время. При выделении слота на календаре время подставляется автоматически."
+      :description="bookingModalDescription"
     >
       <form
         id="booking-form"
@@ -567,6 +620,25 @@ watch(resourceId, () => {
             >
           </div>
         </div>
+        <p
+          v-if="selectedResource?.maxBookingMinutes != null && bookingDurationMinutesDisplay != null"
+          class="text-xs leading-relaxed text-muted-foreground"
+        >
+          Длительность:
+          <span class="font-medium tabular-nums text-foreground">
+            {{ bookingDurationMinutesDisplay }} мин
+          </span>
+          <span class="text-muted-foreground">
+            (не более
+            <span class="tabular-nums">{{ selectedResource.maxBookingMinutes }}</span> мин)
+          </span>
+        </p>
+        <p
+          v-if="bookingExceedsMaxDuration"
+          class="text-xs font-medium text-destructive"
+        >
+          Укоротите интервал: превышена максимальная длительность для этого ресурса.
+        </p>
       </form>
       <template #footer>
         <Button
@@ -579,7 +651,7 @@ watch(resourceId, () => {
         <Button
           type="submit"
           form="booking-form"
-          :disabled="loading"
+          :disabled="loading || bookingExceedsMaxDuration"
         >
           {{ loading ? 'Сохранение…' : 'Забронировать' }}
         </Button>

@@ -100,6 +100,7 @@ export class ResourcesService {
       name: dto.name,
       type: dto.type,
       capacity: dto.capacity,
+      maxBookingMinutes: dto.maxBookingMinutes ?? null,
       isActive: dto.isActive ?? true,
       metadata: dto.metadata ?? null,
     });
@@ -130,6 +131,9 @@ export class ResourcesService {
     }
     if (dto.capacity !== undefined) {
       r.capacity = dto.capacity;
+    }
+    if (dto.maxBookingMinutes !== undefined) {
+      r.maxBookingMinutes = dto.maxBookingMinutes ?? null;
     }
     if (dto.isActive !== undefined) {
       r.isActive = dto.isActive;
@@ -165,6 +169,7 @@ export class ResourcesService {
       name: r.name,
       type: r.type,
       capacity: r.capacity,
+      maxBookingMinutes: r.maxBookingMinutes ?? null,
       isActive: r.isActive,
       metadata: r.metadata,
       createdAt: r.createdAt,

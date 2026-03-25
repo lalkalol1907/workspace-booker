@@ -95,6 +95,17 @@ export class BookingsService {
     if (dto.endsAt <= dto.startsAt) {
       throw new ForbiddenException();
     }
+
+    if (
+      res.maxBookingMinutes != null &&
+      dto.endsAt.getTime() - dto.startsAt.getTime() >
+        res.maxBookingMinutes * 60 * 1000
+    ) {
+      throw new ForbiddenException(
+        'Превышена максимальная длительность брони для этого ресурса',
+      );
+    }
+
     const overlap = await this.repo
       .createQueryBuilder('b')
       .where('b.resourceId = :rid', { rid: dto.resourceId })

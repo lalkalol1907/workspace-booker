@@ -33,6 +33,18 @@ export class CreateResourceDto {
   @Min(1)
   capacity!: number;
 
+  @ApiPropertyOptional({
+    nullable: true,
+    description:
+      'Максимальная длительность одной брони в минутах. null = без ограничения.',
+    example: 180,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  maxBookingMinutes?: number | null;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()

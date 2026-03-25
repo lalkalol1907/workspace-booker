@@ -42,6 +42,9 @@ export class Resource {
   @Column({ type: 'int', default: 1 })
   capacity!: number;
 
+  @Column({ name: 'max_booking_minutes', type: 'int', nullable: true })
+  maxBookingMinutes!: number | null;
+
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 

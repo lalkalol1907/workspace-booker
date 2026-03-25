@@ -67,6 +67,15 @@ onMounted(async () => {
             Вместимость
           </dt>
           <dd>{{ row.capacity }}</dd>
+          <dt class="text-muted-foreground">
+            Макс. бронь
+          </dt>
+          <dd class="tabular-nums">
+            <template v-if="row.maxBookingMinutes != null">
+              {{ row.maxBookingMinutes }} мин
+            </template>
+            <span v-else>—</span>
+          </dd>
         </dl>
       </article>
     </div>
@@ -78,6 +87,9 @@ onMounted(async () => {
             <TableHead>Название</TableHead>
             <TableHead>Тип</TableHead>
             <TableHead>Вместимость</TableHead>
+            <TableHead class="whitespace-nowrap">
+              Макс. бронь
+            </TableHead>
             <TableHead>Активен</TableHead>
           </TableRow>
         </TableHeader>
@@ -91,6 +103,12 @@ onMounted(async () => {
             </TableCell>
             <TableCell>{{ resourceTypeLabel(row.type) }}</TableCell>
             <TableCell>{{ row.capacity }}</TableCell>
+            <TableCell class="tabular-nums text-muted-foreground">
+              <template v-if="row.maxBookingMinutes != null">
+                {{ row.maxBookingMinutes }} мин
+              </template>
+              <span v-else>—</span>
+            </TableCell>
             <TableCell>{{ row.isActive ? 'да' : 'нет' }}</TableCell>
           </TableRow>
         </TableBody>

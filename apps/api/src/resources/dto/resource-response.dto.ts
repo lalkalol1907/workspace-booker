@@ -17,6 +17,13 @@ export class ResourceResponseDto {
   @ApiProperty()
   capacity!: number;
 
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Максимальная длительность одной брони в минутах. null = без ограничения.',
+    example: 180,
+  })
+  maxBookingMinutes!: number | null;
+
   @ApiProperty()
   isActive!: boolean;
 
