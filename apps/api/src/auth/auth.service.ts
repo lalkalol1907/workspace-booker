@@ -69,20 +69,31 @@ export class AuthService {
       throw new UnauthorizedException();
     }
     const email = dto.email.toLowerCase();
-    let user = await this.userRepo.findOne({
+    const tenantUser = await this.userRepo.findOne({
       where: { organizationId: org.id, email },
     });
-    if (!user) {
+    const superAdminUser = await this.userRepo.findOne({
+      where: { email, role: UserRole.SUPER_ADMIN },
+    });
+
+    let user: User | null = null;
+    if (tenantUser) {
+      const okTenant = await bcrypt.compare(dto.password, tenantUser.passwordHash);
+      if (okTenant) {
+        user = tenantUser;
+      }
+    }
+    if (!user && superAdminUser) {
       // Platform admins can sign in from any tenant domain.
-      user = await this.userRepo.findOne({
-        where: { email, role: UserRole.SUPER_ADMIN },
-      });
+      const okSuperAdmin = await bcrypt.compare(
+        dto.password,
+        superAdminUser.passwordHash,
+      );
+      if (okSuperAdmin) {
+        user = superAdminUser;
+      }
     }
     if (!user) {
-      throw new UnauthorizedException();
-    }
-    const ok = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!ok) {
       throw new UnauthorizedException();
     }
     return this.issueTokens(user);
