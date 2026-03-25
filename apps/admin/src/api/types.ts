@@ -20,3 +20,17 @@ export interface OrganizationSummary {
   hosts: string[];
   createdAt: string;
 }
+
+export interface PlatformAdminSummary {
+  id: string;
+  email: string;
+  displayName: string;
+}
+
+export interface PlatformAdminUpsertResult {
+  userId: string;
+  email: string;
+  displayName: string;
+  action: 'created' | 'promoted' | 'already_super_admin';
+  temporaryPassword?: string | null;
+}

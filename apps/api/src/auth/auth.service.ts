@@ -68,9 +68,16 @@ export class AuthService {
     if (!org) {
       throw new UnauthorizedException();
     }
-    const user = await this.userRepo.findOne({
-      where: { organizationId: org.id, email: dto.email.toLowerCase() },
+    const email = dto.email.toLowerCase();
+    let user = await this.userRepo.findOne({
+      where: { organizationId: org.id, email },
     });
+    if (!user) {
+      // Platform admins can sign in from any tenant domain.
+      user = await this.userRepo.findOne({
+        where: { email, role: UserRole.SUPER_ADMIN },
+      });
+    }
     if (!user) {
       throw new UnauthorizedException();
     }

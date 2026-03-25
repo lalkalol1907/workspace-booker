@@ -5,13 +5,19 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { Repository } from 'typeorm';
+import { UserRole } from '../common/enums/user-role.enum';
 import { normalizeOrganizationHostsInput } from '../common/utils/organization-hosts';
 import { OrganizationHost } from '../entities/organization-host.entity';
 import { Organization } from '../entities/organization.entity';
 import { User } from '../entities/user.entity';
 import { CreatePlatformOrganizationDto } from './dto/create-platform-organization.dto';
+import { PlatformAdminSummaryDto } from './dto/platform-admin-summary.dto';
+import { PlatformAdminUpsertResultDto } from './dto/platform-admin-upsert-result.dto';
 import { OrganizationSummaryDto } from './dto/organization-summary.dto';
+import { UpsertPlatformAdminDto } from './dto/upsert-platform-admin.dto';
 import { UpdatePlatformOrganizationDto } from './dto/update-platform-organization.dto';
 import { UpdatePlatformUserRoleDto } from './dto/update-platform-user-role.dto';
 
@@ -25,6 +31,72 @@ export class PlatformService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
+
+  private generateTemporaryPassword(): string {
+    return randomBytes(12).toString('base64url').slice(0, 16);
+  }
+
+  async listPlatformAdmins(): Promise<PlatformAdminSummaryDto[]> {
+    const rows = await this.userRepo.find({
+      where: { role: UserRole.SUPER_ADMIN },
+      order: { email: 'ASC' },
+    });
+    return rows.map((u) => ({
+      id: u.id,
+      email: u.email,
+      displayName: u.displayName,
+    }));
+  }
+
+  async upsertPlatformAdmin(
+    dto: UpsertPlatformAdminDto,
+  ): Promise<PlatformAdminUpsertResultDto> {
+    const email = dto.email.trim().toLowerCase();
+    const rows = await this.userRepo.find({ where: { email } });
+    if (rows.length > 1) {
+      throw new ConflictException(
+        'More than one user with this email exists; resolve duplicates first',
+      );
+    }
+    const existing = rows[0] ?? null;
+    if (!existing) {
+      const tempPlain = this.generateTemporaryPassword();
+      const user = this.userRepo.create({
+        organizationId: null,
+        email,
+        passwordHash: await bcrypt.hash(tempPlain, 10),
+        displayName: dto.displayName?.trim() || email.split('@')[0] || email,
+        role: UserRole.SUPER_ADMIN,
+        mustChangePassword: true,
+      });
+      await this.userRepo.save(user);
+      return {
+        userId: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        action: 'created',
+        temporaryPassword: tempPlain,
+      };
+    }
+    if (existing.role === UserRole.SUPER_ADMIN) {
+      return {
+        userId: existing.id,
+        email: existing.email,
+        displayName: existing.displayName,
+        action: 'already_super_admin',
+        temporaryPassword: null,
+      };
+    }
+    existing.role = UserRole.SUPER_ADMIN;
+    await this.userRepo.save(existing);
+    return {
+      userId: existing.id,
+      email: existing.email,
+      displayName: existing.displayName,
+      action: 'promoted',
+      temporaryPassword: null,
+    };
+  }
 
   async listOrganizations(): Promise<OrganizationSummaryDto[]> {
     const rows = await this.orgRepo.find({

@@ -23,8 +23,17 @@ async function main() {
   setTenantHeadersProvider((): Record<string, string> => {
     const auth = useAuthStore();
     const tenant = useTenantContextStore();
-    if (auth.user?.role === 'super_admin' && tenant.selectedOrgId) {
-      return { 'X-Organization-Id': tenant.selectedOrgId };
+    if (auth.user?.role === 'super_admin') {
+      if (tenant.selectedOrgId) {
+        return { 'X-Organization-Id': tenant.selectedOrgId };
+      }
+      const host = window.location.hostname.trim().toLowerCase();
+      const matched = tenant.organizations.find((o) =>
+        o.hosts.some((h) => h.trim().toLowerCase() === host),
+      );
+      if (matched) {
+        return { 'X-Organization-Id': matched.id };
+      }
     }
     return {};
   });

@@ -42,16 +42,20 @@ export const useTenantContextStore = defineStore('tenantContext', () => {
       return;
     }
 
-    const saved = selectedOrgId.value;
-    if (saved && list.some((o) => o.id === saved)) {
-      return;
-    }
-
     const currentHost = normalizeHost(window.location.hostname);
     const matched = list.find((o) =>
       o.hosts.some((h) => normalizeHost(h) === currentHost),
     );
-    setSelectedOrgId(matched?.id ?? list[0].id);
+    if (matched) {
+      setSelectedOrgId(matched.id);
+      return;
+    }
+
+    const saved = selectedOrgId.value;
+    if (saved && list.some((o) => o.id === saved)) {
+      return;
+    }
+    setSelectedOrgId(list[0].id);
   }
 
   return {

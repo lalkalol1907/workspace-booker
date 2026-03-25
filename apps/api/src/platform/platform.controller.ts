@@ -25,7 +25,10 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { CreatePlatformOrganizationDto } from './dto/create-platform-organization.dto';
+import { PlatformAdminSummaryDto } from './dto/platform-admin-summary.dto';
+import { PlatformAdminUpsertResultDto } from './dto/platform-admin-upsert-result.dto';
 import { OrganizationSummaryDto } from './dto/organization-summary.dto';
+import { UpsertPlatformAdminDto } from './dto/upsert-platform-admin.dto';
 import { UpdatePlatformOrganizationDto } from './dto/update-platform-organization.dto';
 import { UpdatePlatformUserRoleDto } from './dto/update-platform-user-role.dto';
 import { PlatformService } from './platform.service';
@@ -37,6 +40,31 @@ import { PlatformService } from './platform.service';
 @ApiUnauthorizedResponse()
 export class PlatformController {
   constructor(private readonly platform: PlatformService) {}
+
+  @Get('admins')
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List platform admins' })
+  @ApiOkResponse({ type: PlatformAdminSummaryDto, isArray: true })
+  listAdmins(): Promise<PlatformAdminSummaryDto[]> {
+    return this.platform.listPlatformAdmins();
+  }
+
+  @Post('admins')
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Create or promote platform admin by email',
+  })
+  @ApiBody({ type: UpsertPlatformAdminDto })
+  @ApiCreatedResponse({ type: PlatformAdminUpsertResultDto })
+  @ApiConflictResponse({
+    description: 'Conflicting duplicate users with same email',
+  })
+  upsertAdmin(
+    @CurrentUser() _user: JwtPayload,
+    @Body() dto: UpsertPlatformAdminDto,
+  ): Promise<PlatformAdminUpsertResultDto> {
+    return this.platform.upsertPlatformAdmin(dto);
+  }
 
   @Get('organizations')
   @Roles(UserRole.SUPER_ADMIN)

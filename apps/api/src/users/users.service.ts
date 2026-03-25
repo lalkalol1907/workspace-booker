@@ -12,7 +12,7 @@ import { UserRole } from '../common/enums/user-role.enum';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { User } from '../entities/user.entity';
 import { InviteUserDto } from './dto/invite-user.dto';
-import { InviteUserResponseDto } from './dto/invite-user-response.dto';
+import type { InviteUserResponseDto } from './dto/invite-user-response.dto';
 import { UserSummaryDto } from './dto/user-summary.dto';
 
 function generateTemporaryPassword(): string {
@@ -87,6 +87,38 @@ export class UsersService {
       userId: user.id,
       email: user.email,
       displayName: user.displayName,
+      temporaryPassword: tempPlain,
+    };
+  }
+
+  async resetPassword(
+    admin: JwtPayload,
+    organizationId: string,
+    userId: string,
+  ): Promise<InviteUserResponseDto> {
+    const target = await this.userRepo.findOne({
+      where: { id: userId, organizationId },
+    });
+    if (!target) {
+      throw new NotFoundException();
+    }
+    if (target.id === admin.sub) {
+      throw new ForbiddenException();
+    }
+    if (
+      target.role === UserRole.ADMIN &&
+      admin.role !== UserRole.SUPER_ADMIN
+    ) {
+      throw new ForbiddenException();
+    }
+    const tempPlain = generateTemporaryPassword();
+    target.passwordHash = await bcrypt.hash(tempPlain, 10);
+    target.mustChangePassword = true;
+    await this.userRepo.save(target);
+    return {
+      userId: target.id,
+      email: target.email,
+      displayName: target.displayName,
       temporaryPassword: tempPlain,
     };
   }

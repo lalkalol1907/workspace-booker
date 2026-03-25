@@ -54,6 +54,24 @@ export class UsersController {
     return this.users.list(organizationId);
   }
 
+  @Post(':id/reset-password')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Reset user password',
+    description:
+      'Generates a new one-time temporary password and requires change on next login. Cannot target yourself or another tenant admin (unless platform admin).',
+  })
+  @ApiCreatedResponse({ type: InviteUserResponseDto })
+  @ApiNotFoundResponse()
+  @ApiForbiddenResponse()
+  resetPassword(
+    @CurrentUser() user: JwtPayload,
+    @CurrentTenantOrg() organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<InviteUserResponseDto> {
+    return this.users.resetPassword(user, organizationId, id);
+  }
+
   @Delete(':id')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)

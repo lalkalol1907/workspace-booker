@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Trash2 } from 'lucide-vue-next';
+import { KeyRound, Trash2 } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import ConfirmDialog from '@/components/ui/alert-dialog/ConfirmDialog.vue';
@@ -28,6 +28,7 @@ const displayName = ref('');
 const inviteLoading = ref(false);
 
 const resultOpen = ref(false);
+const resultTitle = ref('Доступ выдан');
 const inviteResult = ref<InviteUserResponse | null>(null);
 
 const rows = ref<UserSummary[]>([]);
@@ -36,6 +37,10 @@ const roleUpdatingId = ref<string | null>(null);
 
 const confirmOpen = ref(false);
 const pendingDelete = ref<UserSummary | null>(null);
+
+const resetConfirmOpen = ref(false);
+const pendingReset = ref<UserSummary | null>(null);
+const resetLoading = ref(false);
 
 function roleLabel(role: string) {
   if (role === 'super_admin') {
@@ -86,6 +91,7 @@ async function submitInvite() {
       body: JSON.stringify(body),
     });
     inviteModalOpen.value = false;
+    resultTitle.value = 'Доступ выдан';
     inviteResult.value = res;
     resultOpen.value = true;
     email.value = '';
@@ -157,6 +163,54 @@ function canDelete(row: UserSummary) {
   return true;
 }
 
+function canResetPassword(row: UserSummary) {
+  if (row.id === auth.user?.userId) {
+    return false;
+  }
+  if (row.role === 'admin') {
+    return auth.isSuperAdmin;
+  }
+  return true;
+}
+
+function askResetPassword(row: UserSummary) {
+  pendingReset.value = row;
+  resetConfirmOpen.value = true;
+}
+
+async function confirmResetPassword() {
+  if (resetLoading.value) {
+    return;
+  }
+  const row = pendingReset.value;
+  if (!row) {
+    return;
+  }
+  resetLoading.value = true;
+  try {
+    const res = await http<InviteUserResponse>(
+      `/users/${row.id}/reset-password`,
+      { method: 'POST' },
+    );
+    resultTitle.value = 'Пароль сброшен';
+    inviteResult.value = res;
+    resetConfirmOpen.value = false;
+    pendingReset.value = null;
+    resultOpen.value = true;
+    toast.success('Новый временный пароль сгенерирован');
+  } catch (e: unknown) {
+    if (e instanceof ApiError && e.status === 403) {
+      toast.error('Нельзя сбросить пароль себе или другому администратору');
+    } else if (e instanceof ApiError && e.status === 404) {
+      toast.error('Пользователь не найден');
+    } else {
+      toast.error('Не удалось сбросить пароль');
+    }
+  } finally {
+    resetLoading.value = false;
+  }
+}
+
 function canChangeTenantRole(row: UserSummary): boolean {
   if (!auth.isSuperAdmin) {
     return false;
@@ -203,8 +257,9 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
       <div>
         <h1>Пользователи</h1>
         <p class="mt-2 max-w-xl text-sm text-muted-foreground">
-          Удаление пользователя навсегда убирает его и все его брони в этой
-          организации.
+          Сброс пароля выдаёт новый одноразовый пароль; пользователь сменит его
+          при следующем входе. Удаление пользователя навсегда убирает его и
+          все его брони в этой организации.
           <span
             v-if="auth.isSuperAdmin"
             class="block pt-1"
@@ -235,7 +290,7 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
             <TableHead class="min-w-[200px]">
               Роль
             </TableHead>
-            <TableHead class="w-[72px] text-right">
+            <TableHead class="w-[120px] text-right">
               Действия
             </TableHead>
           </TableRow>
@@ -271,7 +326,19 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
               </select>
               <span v-else>{{ roleLabel(row.role) }}</span>
             </TableCell>
-            <TableCell class="flex justify-end">
+            <TableCell class="flex justify-end gap-0.5">
+              <Button
+                v-if="canResetPassword(row)"
+                variant="ghost"
+                size="icon"
+                class="text-muted-foreground hover:text-foreground"
+                type="button"
+                aria-label="Сбросить пароль"
+                title="Сбросить пароль"
+                @click="askResetPassword(row)"
+              >
+                <KeyRound class="size-4" />
+              </Button>
               <Button
                 v-if="canDelete(row)"
                 variant="ghost"
@@ -284,8 +351,8 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
                 <Trash2 class="size-4" />
               </Button>
               <span
-                v-else
-                class="text-xs text-muted-foreground"
+                v-if="!canResetPassword(row) && !canDelete(row)"
+                class="px-2 text-xs text-muted-foreground"
               >—</span>
             </TableCell>
           </TableRow>
@@ -342,7 +409,7 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
 
     <FormDialog
       v-model:open="resultOpen"
-      title="Доступ выдан"
+      :title="resultTitle"
     >
       <div
         v-if="inviteResult"
@@ -357,6 +424,10 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
           <code
             class="ml-2 rounded bg-muted px-2 py-0.5 font-mono text-xs"
           >{{ inviteResult.temporaryPassword }}</code>
+        </p>
+        <p class="text-xs text-muted-foreground">
+          Сообщите пользователю пароль по безопасному каналу. Повторно он не
+          отобразится.
         </p>
         <Button
           type="button"
@@ -384,6 +455,15 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
       cancel-text="Отмена"
       destructive
       @confirm="confirmDelete"
+    />
+
+    <ConfirmDialog
+      v-model:open="resetConfirmOpen"
+      :title="`Сбросить пароль: ${pendingReset?.email ?? ''}?`"
+      description="Будет сгенерирован новый одноразовый пароль. Текущий пароль перестанет действовать. Пользователь обязан будет сменить пароль при входе."
+      confirm-text="Сбросить"
+      cancel-text="Отмена"
+      @confirm="confirmResetPassword"
     />
   </section>
 </template>
