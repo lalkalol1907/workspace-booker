@@ -19,7 +19,9 @@ function shortOrgName(name: string, max = 17): string {
 </script>
 
 <template>
-  <aside class="glass-panel flex w-[240px] shrink-0 flex-col overflow-hidden">
+  <aside
+    class="glass-panel hidden w-[240px] shrink-0 flex-col overflow-hidden md:flex"
+  >
     <div class="border-b border-border/70 px-5 py-4 text-sm font-semibold">
       Навигация
     </div>

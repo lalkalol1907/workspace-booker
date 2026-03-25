@@ -5,7 +5,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import FullCalendar from '@fullcalendar/vue3';
-import { nextTick, onMounted, ref, shallowRef, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import Button from '@/components/ui/button/Button.vue';
 import FormDialog from '@/components/ui/dialog/FormDialog.vue';
@@ -15,7 +15,10 @@ import LoadingOverlay from '@/components/ui/loading-overlay/LoadingOverlay.vue';
 import { http } from '@/api/http';
 import type { BookingDto, ResourceDto } from '@/api/types';
 import { useAuthStore } from '@/stores/auth';
+import { useIsMdUp } from '@/composables/useMediaQuery';
 import { cn } from '@/lib/utils';
+
+const isMdUp = useIsMdUp();
 
 const selectClass = cn(
   'select-glass flex h-9 min-w-[200px] max-w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:max-w-[320px]',
@@ -37,6 +40,16 @@ const bookingStart = ref('');
 const bookingEnd = ref('');
 
 const calendarExpanded = ref(false);
+
+watch(
+  isMdUp,
+  (md) => {
+    if (!md) {
+      calendarExpanded.value = true;
+    }
+  },
+  { immediate: true },
+);
 
 function toLocalDatetimeValue(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -187,16 +200,22 @@ async function createBooking() {
   }
 }
 
-const calendarOptions = shallowRef({
+const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-  initialView: 'timeGridWeek',
+  initialView: (isMdUp.value ? 'timeGridWeek' : 'timeGridDay') as string,
   locale: ruLocale,
   firstDay: 1,
-  headerToolbar: {
-    left: 'prev,next today',
-    center: 'title',
-    right: 'dayGridMonth,timeGridWeek,timeGridDay',
-  },
+  headerToolbar: isMdUp.value
+    ? {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay',
+      }
+    : {
+        left: 'prev,next',
+        center: 'title',
+        right: 'today dayGridMonth',
+      },
   buttonText: {
     today: 'Сегодня',
     month: 'Месяц',
@@ -212,8 +231,8 @@ const calendarOptions = shallowRef({
   slotLabelInterval: '01:00',
   selectable: true,
   selectMirror: true,
-  height: 'auto',
-  contentHeight: 620,
+  height: 'auto' as const,
+  contentHeight: isMdUp.value ? 620 : 440,
   events: (
     info: EventSourceFuncArg,
     success: (events: EventInput[]) => void,
@@ -235,6 +254,19 @@ const calendarOptions = shallowRef({
     const end = arg.event.end?.toLocaleString() ?? '';
     toast.info(`${arg.event.title}\n${start} — ${end}`);
   },
+}));
+
+watch(isMdUp, async () => {
+  await nextTick();
+  const api = calendarRef.value?.getApi?.();
+  if (!api) {
+    return;
+  }
+  const next = isMdUp.value ? 'timeGridWeek' : 'timeGridDay';
+  if (api.view.type !== next) {
+    api.changeView(next);
+  }
+  api.updateSize();
 });
 
 onMounted(async () => {
@@ -256,16 +288,20 @@ watch(resourceId, () => {
   <section class="w-full space-y-4">
     <div class="glass-panel px-5 py-4">
       <h1>Календарь занятости</h1>
-      <p class="max-w-[52rem] text-sm leading-relaxed text-muted-foreground">
+      <p
+        class="max-w-[52rem] text-xs leading-relaxed text-muted-foreground md:text-sm"
+      >
         Выберите ресурс — отображается расписание всех броней. Свои слоты
         выделены цветом темы, чужие — серым. Выделите интервал на календаре
         или нажмите «Новая бронь» — время можно уточнить в окне.
       </p>
     </div>
-    <div class="glass-panel mb-4 flex flex-wrap items-center gap-3 px-4 py-3">
+    <div
+      class="glass-panel mb-3 flex flex-col gap-3 px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center md:mb-4 md:px-4"
+    >
       <select
         v-model="resourceId"
-        :class="selectClass"
+        :class="cn(selectClass, 'min-w-0 flex-1 sm:min-w-[200px] sm:flex-none')"
       >
         <option
           value=""
@@ -281,23 +317,29 @@ watch(resourceId, () => {
           {{ r.name }}
         </option>
       </select>
-      <Button
-        v-if="resourceId"
-        type="button"
-        variant="glass"
-        @click="calendarExpanded = !calendarExpanded"
+      <div class="flex flex-wrap items-center gap-2 sm:contents">
+        <Button
+          v-if="resourceId && isMdUp"
+          type="button"
+          variant="glass"
+          class="shrink-0"
+          @click="calendarExpanded = !calendarExpanded"
+        >
+          {{ calendarExpanded ? 'Свернуть календарь' : 'Развернуть календарь' }}
+        </Button>
+        <Button
+          v-if="resourceId"
+          type="button"
+          variant="glass"
+          class="shrink-0"
+          @click="openBookingModal"
+        >
+          Новая бронь
+        </Button>
+      </div>
+      <div
+        class="flex w-full flex-wrap items-center gap-2 text-[11px] text-muted-foreground sm:ml-auto sm:w-auto md:text-xs"
       >
-        {{ calendarExpanded ? 'Свернуть календарь' : 'Развернуть календарь' }}
-      </Button>
-      <Button
-        v-if="resourceId"
-        type="button"
-        variant="glass"
-        @click="openBookingModal"
-      >
-        Новая бронь
-      </Button>
-      <div class="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
         <span class="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/50 px-2 py-1">
           <span class="size-2 rounded-full bg-primary/80" />
           Мои брони
@@ -309,8 +351,8 @@ watch(resourceId, () => {
       </div>
     </div>
     <div
-      v-show="calendarExpanded"
-      class="glass-panel relative mb-6 min-h-[200px] p-3"
+      v-show="calendarExpanded || !isMdUp"
+      class="glass-panel relative mb-4 min-h-[200px] p-2 min-[480px]:p-3 md:mb-6"
     >
       <LoadingOverlay v-if="loading && resourceId" />
       <FullCalendar
@@ -408,10 +450,34 @@ watch(resourceId, () => {
   margin-bottom: 1rem;
 }
 
+@media (max-width: 767px) {
+  :deep(.fc .fc-toolbar.fc-header-toolbar) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  :deep(.fc .fc-toolbar-chunk) {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+}
+
 :deep(.fc .fc-toolbar-title) {
-  font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: -0.01em;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  :deep(.fc .fc-toolbar-title) {
+    font-size: 1.05rem;
+    text-align: inherit;
+  }
 }
 
 :deep(.fc .fc-button) {

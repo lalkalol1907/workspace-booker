@@ -40,14 +40,76 @@ async function cancelRow(id: string) {
 </script>
 
 <template>
-  <section class="space-y-4">
-    <div class="glass-panel px-5 py-4">
+  <section class="space-y-3 md:space-y-4">
+    <div class="glass-panel px-4 py-3 md:px-5 md:py-4">
       <h1>Мои бронирования</h1>
-      <p class="text-sm text-muted-foreground">
+      <p class="text-xs text-muted-foreground md:text-sm">
         Управляйте своими активными бронированиями и историей.
       </p>
     </div>
-    <div class="glass-panel relative p-3">
+    <div class="relative space-y-2 md:hidden">
+      <LoadingOverlay v-if="loading" />
+      <p
+        v-if="!rows.length && !loading"
+        class="glass-panel p-6 text-center text-sm text-muted-foreground"
+      >
+        Нет броней
+      </p>
+      <article
+        v-for="row in rows"
+        :key="row.id"
+        class="glass-panel space-y-3 p-4"
+      >
+        <div class="space-y-1">
+          <h2 class="text-base font-semibold leading-tight">
+            {{ row.title }}
+          </h2>
+          <p class="text-sm text-muted-foreground">
+            {{ row.resourceName }}
+          </p>
+        </div>
+        <dl class="space-y-1 text-sm">
+          <div class="flex justify-between gap-2">
+            <dt class="text-muted-foreground">
+              Начало
+            </dt>
+            <dd class="text-right tabular-nums">
+              {{ new Date(row.startsAt).toLocaleString() }}
+            </dd>
+          </div>
+          <div class="flex justify-between gap-2">
+            <dt class="text-muted-foreground">
+              Конец
+            </dt>
+            <dd class="text-right tabular-nums">
+              {{ new Date(row.endsAt).toLocaleString() }}
+            </dd>
+          </div>
+          <div class="flex justify-between gap-2">
+            <dt class="text-muted-foreground">
+              Статус
+            </dt>
+            <dd>{{ bookingStatusLabel(row.status) }}</dd>
+          </div>
+        </dl>
+        <div
+          v-if="row.status === 'confirmed'"
+          class="flex justify-end border-t border-border/60 pt-3"
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            class="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            type="button"
+            @click="cancelRow(row.id)"
+          >
+            <Trash2 class="mr-2 size-4" />
+            Отменить
+          </Button>
+        </div>
+      </article>
+    </div>
+    <div class="glass-panel relative hidden p-3 md:block">
       <LoadingOverlay v-if="loading" />
       <Table>
         <TableHeader>

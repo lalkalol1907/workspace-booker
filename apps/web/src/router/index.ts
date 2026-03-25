@@ -82,8 +82,16 @@ router.beforeEach((to) => {
   ) {
     return { name: 'change-password', query: { redirect: to.fullPath } };
   }
-  if (to.meta.requiresAdmin && !auth.isAdmin) {
-    return { name: 'calendar' };
+  if (to.meta.requiresAdmin) {
+    if (!auth.isAdmin) {
+      return { name: 'calendar' };
+    }
+    if (
+      typeof window !== 'undefined' &&
+      !window.matchMedia('(min-width: 768px)').matches
+    ) {
+      return { name: 'calendar' };
+    }
   }
   return true;
 });
