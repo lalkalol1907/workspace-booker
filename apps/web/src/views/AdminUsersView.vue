@@ -15,7 +15,6 @@ import TableHead from '@/components/ui/table/TableHead.vue';
 import TableHeader from '@/components/ui/table/TableHeader.vue';
 import TableRow from '@/components/ui/table/TableRow.vue';
 import { ApiError, http } from '@/api/http';
-import { copyTextToClipboard } from '@/utils/clipboard';
 import type { InviteUserResponse, UserSummary } from '@/api/types';
 import { useAuthStore } from '@/stores/auth';
 import { useTenantContextStore } from '@/stores/tenant-context';
@@ -33,11 +32,10 @@ const inviteResult = ref<InviteUserResponse | null>(null);
 
 const rows = ref<UserSummary[]>([]);
 const listLoading = ref(false);
+const roleUpdatingId = ref<string | null>(null);
 
 const confirmOpen = ref(false);
 const pendingDelete = ref<UserSummary | null>(null);
-
-const roleUpdatingId = ref<string | null>(null);
 
 function roleLabel(role: string) {
   if (role === 'super_admin') {
@@ -111,7 +109,11 @@ async function copyPassword() {
     return;
   }
   try {
-    await copyTextToClipboard(t);
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(t);
+    } else {
+      throw new Error('Clipboard API is unavailable');
+    }
     toast.success('Пароль скопирован');
   } catch {
     toast.error('Не удалось скопировать');
@@ -149,13 +151,12 @@ function canDelete(row: UserSummary) {
   if (row.id === auth.user?.userId) {
     return false;
   }
-  if (row.role === 'admin' || row.role === 'super_admin') {
+  if (row.role === 'admin') {
     return false;
   }
   return true;
 }
 
-/** Назначение админов организации — только у админа платформы (API platform). */
 function canChangeTenantRole(row: UserSummary): boolean {
   if (!auth.isSuperAdmin) {
     return false;
@@ -170,24 +171,22 @@ function canChangeTenantRole(row: UserSummary): boolean {
 }
 
 async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
-  const tenantRole = row.role === 'admin' ? 'admin' : 'member';
-  if (tenantRole === role) {
+  const currentRole = row.role === 'admin' ? 'admin' : 'member';
+  if (currentRole === role) {
     return;
   }
   const orgId = tenant.selectedOrgId;
   if (!orgId) {
-    toast.error('Выберите организацию в боковой панели');
+    toast.error('Выберите организацию в селекторе');
     return;
   }
+
   roleUpdatingId.value = row.id;
   try {
-    await http<void>(
-      `/platform/organizations/${orgId}/users/${row.id}/role`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ role }),
-      },
-    );
+    await http<void>(`/platform/organizations/${orgId}/users/${row.id}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    });
     toast.success('Роль обновлена');
     await loadUsers();
   } catch {
@@ -199,8 +198,8 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
 </script>
 
 <template>
-  <div>
-    <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+  <section class="space-y-4">
+    <div class="glass-panel mb-6 flex flex-wrap items-start justify-between gap-4 px-5 py-4">
       <div>
         <h1>Пользователи</h1>
         <p class="mt-2 max-w-xl text-sm text-muted-foreground">
@@ -210,8 +209,8 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
             v-if="auth.isSuperAdmin"
             class="block pt-1"
           >
-            Как админ платформы вы можете назначать администраторов организации
-            в колонке «Роль».
+            Только админ платформы может назначать администраторов в колонке
+            «Роль».
           </span>
         </p>
       </div>
@@ -226,7 +225,7 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
     <h2 class="mb-3 text-lg font-semibold">
       Список
     </h2>
-    <div class="relative rounded-md border">
+    <div class="glass-panel relative p-3">
       <LoadingOverlay v-if="listLoading" />
       <Table>
         <TableHeader>
@@ -251,7 +250,7 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
             <TableCell>
               <select
                 v-if="canChangeTenantRole(row)"
-                class="flex h-9 max-w-[220px] rounded-md border border-input bg-background px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                class="select-glass flex h-9 max-w-[220px] rounded-xl border border-input bg-background px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                 :value="row.role === 'admin' ? 'admin' : 'member'"
                 :disabled="roleUpdatingId === row.id"
                 @change="
@@ -386,5 +385,5 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
       destructive
       @confirm="confirmDelete"
     />
-  </div>
+  </section>
 </template>

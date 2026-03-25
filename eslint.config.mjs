@@ -42,7 +42,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/web/**/*.ts'],
+    files: ['apps/web/**/*.ts', 'apps/admin/**/*.ts'],
     extends: [
       eslint.configs.recommended,
       ...tseslint.configs.recommendedTypeChecked,
@@ -59,7 +59,7 @@ export default tseslint.config(
   },
   ...pluginVue.configs['flat/recommended'],
   {
-    files: ['apps/web/**/*.vue'],
+    files: ['apps/web/**/*.vue', 'apps/admin/**/*.vue'],
     languageOptions: {
       parser: vueParser,
       parserOptions: {

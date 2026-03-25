@@ -19,7 +19,7 @@ import type { LocationDto } from '@/api/types';
 import { cn } from '@/lib/utils';
 
 const selectClass = cn(
-  'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+  'select-glass flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
 );
 
 const rows = ref<LocationDto[]>([]);
@@ -121,17 +121,24 @@ function parentOptions() {
 </script>
 
 <template>
-  <div>
-    <div class="mb-4 flex items-center justify-between gap-4">
-      <h1>Локации</h1>
+  <section class="space-y-4">
+    <div class="glass-panel mb-4 flex flex-wrap items-start justify-between gap-4 px-5 py-4">
+      <div class="min-w-0">
+        <h1>Локации</h1>
+        <p class="mt-2 max-w-2xl text-sm text-muted-foreground">
+          Иерархия помещений и зон: укажите родителя для вложенности. Удалить
+          локацию можно только если у неё нет дочерних и привязанных ресурсов.
+        </p>
+      </div>
       <Button
         type="button"
+        class="shrink-0"
         @click="openCreate"
       >
         Добавить
       </Button>
     </div>
-    <div class="relative rounded-md border">
+    <div class="glass-panel relative p-3">
       <LoadingOverlay v-if="loading" />
       <Table>
         <TableHeader>
@@ -243,5 +250,5 @@ function parentOptions() {
       destructive
       @confirm="confirmRemove"
     />
-  </div>
+  </section>
 </template>

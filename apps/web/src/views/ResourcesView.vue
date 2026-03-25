@@ -28,9 +28,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    <h1>Ресурсы</h1>
-    <div class="relative rounded-md border">
+  <section class="space-y-4">
+    <div class="glass-panel px-5 py-4">
+      <h1>Ресурсы</h1>
+      <p class="text-sm text-muted-foreground">
+        Каталог доступных ресурсов по вашей организации.
+      </p>
+    </div>
+    <div class="glass-panel relative p-3">
       <LoadingOverlay v-if="loading" />
       <Table>
         <TableHeader>
@@ -56,5 +61,5 @@ onMounted(async () => {
         </TableBody>
       </Table>
     </div>
-  </div>
+  </section>
 </template>

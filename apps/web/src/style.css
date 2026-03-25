@@ -31,48 +31,56 @@
 
 /* Brand: bg rgb(245,245,244) · primary rgb(79,70,229) · accent rgb(13,148,136) · destructive rgb(220,38,38) */
 :root {
-  --background: 60 5% 96%;
-  --foreground: 240 10% 10%;
+  --background: 220 40% 97%;
+  --foreground: 228 28% 16%;
   --card: 0 0% 100%;
-  --card-foreground: 240 10% 10%;
+  --card-foreground: 228 28% 16%;
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 10%;
-  --primary: 239 84% 59%;
+  --popover-foreground: 228 28% 16%;
+  --primary: 230 90% 64%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 60 4% 94%;
-  --secondary-foreground: 240 10% 10%;
-  --muted: 60 5% 92%;
-  --muted-foreground: 240 4% 45%;
-  --accent: 173 42% 94%;
-  --accent-foreground: 173 80% 26%;
-  --destructive: 0 73% 51%;
+  --secondary: 220 35% 94%;
+  --secondary-foreground: 228 28% 16%;
+  --muted: 220 28% 92%;
+  --muted-foreground: 228 14% 38%;
+  --accent: 226 74% 93%;
+  --accent-foreground: 230 54% 32%;
+  --destructive: 0 76% 54%;
   --destructive-foreground: 0 0% 100%;
-  --border: 240 5% 88%;
-  --input: 240 5% 88%;
-  --ring: 239 84% 59%;
-  --radius: 0.5rem;
+  --border: 224 28% 84%;
+  --input: 224 28% 84%;
+  --ring: 230 90% 64%;
+  --radius: 0.85rem;
+  --glass-bg: 0 0% 100% / 0.62;
+  --glass-bg-strong: 0 0% 100% / 0.82;
+  --glass-border: 0 0% 100% / 0.52;
+  --glass-shadow: 227 55% 35% / 0.12;
 }
 
 .dark {
-  --background: 240 12% 9%;
-  --foreground: 60 6% 96%;
-  --card: 240 10% 12%;
-  --card-foreground: 60 6% 96%;
-  --popover: 240 10% 12%;
-  --popover-foreground: 60 6% 96%;
-  --primary: 239 76% 68%;
-  --primary-foreground: 240 12% 9%;
-  --secondary: 240 8% 18%;
-  --secondary-foreground: 60 6% 96%;
-  --muted: 240 8% 16%;
-  --muted-foreground: 240 5% 64%;
-  --accent: 173 35% 18%;
-  --accent-foreground: 173 55% 82%;
-  --destructive: 0 62% 48%;
+  --background: 232 29% 9%;
+  --foreground: 220 24% 92%;
+  --card: 232 24% 12%;
+  --card-foreground: 220 24% 92%;
+  --popover: 232 24% 12%;
+  --popover-foreground: 220 24% 92%;
+  --primary: 230 94% 74%;
+  --primary-foreground: 232 30% 10%;
+  --secondary: 232 20% 16%;
+  --secondary-foreground: 220 24% 92%;
+  --muted: 232 16% 18%;
+  --muted-foreground: 225 11% 66%;
+  --accent: 230 30% 22%;
+  --accent-foreground: 223 90% 86%;
+  --destructive: 0 72% 53%;
   --destructive-foreground: 0 0% 100%;
-  --border: 240 8% 20%;
-  --input: 240 8% 20%;
-  --ring: 239 76% 68%;
+  --border: 232 18% 24%;
+  --input: 232 18% 24%;
+  --ring: 230 94% 74%;
+  --glass-bg: 230 18% 18% / 0.5;
+  --glass-bg-strong: 230 20% 16% / 0.72;
+  --glass-border: 220 35% 70% / 0.16;
+  --glass-shadow: 0 0% 0% / 0.45;
 }
 
 @layer base {
@@ -88,6 +96,11 @@
     height: 100%;
     overflow: hidden;
     @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(80rem 45rem at -10% -10%, hsl(231 92% 78% / 0.22), transparent 55%),
+      radial-gradient(65rem 38rem at 110% -5%, hsl(192 84% 66% / 0.18), transparent 60%),
+      radial-gradient(65rem 34rem at 50% 115%, hsl(271 82% 70% / 0.14), transparent 60%);
+    background-attachment: fixed;
     font-family:
       ui-sans-serif,
       system-ui,
@@ -116,5 +129,31 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    background: hsl(var(--glass-bg));
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: 0 20px 50px -25px hsl(var(--glass-shadow));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: var(--radius);
+  }
+
+  .select-glass {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 2.25rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5.5 7.5L10 12.2L14.5 7.5' stroke='%238A93A8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 1.05rem;
+  }
+
+  .dark .select-glass {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5.5 7.5L10 12.2L14.5 7.5' stroke='%23B7BED0' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
 }

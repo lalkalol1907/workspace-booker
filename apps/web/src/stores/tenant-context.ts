@@ -2,18 +2,17 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { http } from '@/api/http';
 import type { OrganizationSummary } from '@/api/types';
+import { useAuthStore } from '@/stores/auth';
 
 const STORAGE_KEY = 'booker_selected_org_id';
 
-export const useTenantContextStore = defineStore('tenantContext', () => {
-  const selectedOrgId = ref<string | null>(
-    localStorage.getItem(STORAGE_KEY),
-  );
-  const organizations = ref<OrganizationSummary[]>([]);
+function normalizeHost(value: string): string {
+  return value.trim().toLowerCase().replace(/:\d+$/, '');
+}
 
-  const hasSelectedOrg = computed(
-    () => Boolean(selectedOrgId.value),
-  );
+export const useTenantContextStore = defineStore('tenantContext', () => {
+  const selectedOrgId = ref<string | null>(localStorage.getItem(STORAGE_KEY));
+  const organizations = ref<OrganizationSummary[]>([]);
 
   function setSelectedOrgId(id: string | null) {
     selectedOrgId.value = id;
@@ -29,27 +28,34 @@ export const useTenantContextStore = defineStore('tenantContext', () => {
     setSelectedOrgId(null);
   }
 
-  /** Load tenants for super_admin and ensure a valid X-Organization-Id target. */
   async function ensureLoadedForSuperAdmin(): Promise<void> {
-    const list = await http<OrganizationSummary[]>(
-      '/platform/organizations',
-    );
+    const auth = useAuthStore();
+    if (auth.user?.role !== 'super_admin') {
+      return;
+    }
+
+    const list = await http<OrganizationSummary[]>('/platform/organizations');
     organizations.value = list;
+
     if (list.length === 0) {
       setSelectedOrgId(null);
       return;
     }
+
     const saved = selectedOrgId.value;
-    const valid = saved && list.some((o) => o.id === saved);
-    if (!valid) {
-      setSelectedOrgId(list[0].id);
+    if (saved && list.some((o) => o.id === saved)) {
+      return;
     }
+
+    const currentHost = normalizeHost(window.location.hostname);
+    const matched = list.find((o) => normalizeHost(o.host) === currentHost);
+    setSelectedOrgId(matched?.id ?? list[0].id);
   }
 
   return {
     selectedOrgId,
     organizations,
-    hasSelectedOrg,
+    hasSelectedOrg: computed(() => Boolean(selectedOrgId.value)),
     setSelectedOrgId,
     clear,
     ensureLoadedForSuperAdmin,

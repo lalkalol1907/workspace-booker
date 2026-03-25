@@ -8,7 +8,7 @@ const props = defineProps<{ class?: string }>();
   <div
     :class="
       cn(
-        'rounded-xl border bg-card text-card-foreground shadow',
+        'glass-panel rounded-2xl bg-card/70 text-card-foreground',
         props.class,
       )
     "

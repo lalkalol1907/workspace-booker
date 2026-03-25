@@ -18,11 +18,11 @@ import { useAuthStore } from '@/stores/auth';
 import { cn } from '@/lib/utils';
 
 const selectClass = cn(
-  'flex h-9 min-w-[200px] max-w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:max-w-[320px]',
+  'select-glass flex h-9 min-w-[200px] max-w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:max-w-[320px]',
 );
 
 const inputClass = cn(
-  'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+  'flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
 );
 
 const auth = useAuthStore();
@@ -87,18 +87,40 @@ async function loadEvents(info: EventSourceFuncArg): Promise<EventInput[]> {
     const myId = auth.user?.userId;
     return rows
       .filter((b) => b.status === 'confirmed')
-      .map((b) => ({
-        id: b.id,
-        title: b.title,
-        start: b.startsAt,
-        end: b.endsAt,
-        backgroundColor:
-          b.userId === myId ? 'hsl(226 42% 84%)' : 'hsl(220 14% 82%)',
-        borderColor:
-          b.userId === myId ? 'hsl(226 36% 72%)' : 'hsl(220 12% 70%)',
-        textColor:
-          b.userId === myId ? 'hsl(222 28% 22%)' : 'hsl(220 10% 28%)',
-      }));
+      .map((b) => {
+        const dark = document.documentElement.classList.contains('dark');
+        const mine = b.userId === myId;
+        const palette = dark
+          ? mine
+            ? {
+                backgroundColor: 'hsl(231 32% 26% / 0.76)',
+                borderColor: 'hsl(230 68% 62% / 0.42)',
+                textColor: 'hsl(223 30% 90%)',
+              }
+            : {
+                backgroundColor: 'hsl(231 16% 23% / 0.68)',
+                borderColor: 'hsl(230 20% 40% / 0.45)',
+                textColor: 'hsl(223 20% 84%)',
+              }
+          : mine
+            ? {
+                backgroundColor: 'hsl(229 85% 92% / 0.85)',
+                borderColor: 'hsl(229 64% 76% / 0.75)',
+                textColor: 'hsl(229 34% 30%)',
+              }
+            : {
+                backgroundColor: 'hsl(220 26% 90% / 0.74)',
+                borderColor: 'hsl(220 20% 74% / 0.75)',
+                textColor: 'hsl(220 18% 34%)',
+              };
+        return {
+          id: b.id,
+          title: b.title,
+          start: b.startsAt,
+          end: b.endsAt,
+          ...palette,
+        };
+      });
   } catch {
     toast.error('Не удалось загрузить расписание');
     return [];
@@ -231,14 +253,16 @@ watch(resourceId, () => {
 </script>
 
 <template>
-  <div class="w-full">
-    <h1>Календарь занятости</h1>
-    <p class="mb-4 max-w-[52rem] text-sm leading-relaxed text-muted-foreground">
-      Выберите ресурс — отображается расписание всех броней. Свои слоты
-      выделены цветом темы, чужие — серым. Выделите интервал на календаре
-      или нажмите «Новая бронь» — время можно уточнить в окне.
-    </p>
-    <div class="mb-4 flex flex-wrap items-center gap-3">
+  <section class="w-full space-y-4">
+    <div class="glass-panel px-5 py-4">
+      <h1>Календарь занятости</h1>
+      <p class="max-w-[52rem] text-sm leading-relaxed text-muted-foreground">
+        Выберите ресурс — отображается расписание всех броней. Свои слоты
+        выделены цветом темы, чужие — серым. Выделите интервал на календаре
+        или нажмите «Новая бронь» — время можно уточнить в окне.
+      </p>
+    </div>
+    <div class="glass-panel mb-4 flex flex-wrap items-center gap-3 px-4 py-3">
       <select
         v-model="resourceId"
         :class="selectClass"
@@ -260,7 +284,7 @@ watch(resourceId, () => {
       <Button
         v-if="resourceId"
         type="button"
-        variant="outline"
+        variant="glass"
         @click="calendarExpanded = !calendarExpanded"
       >
         {{ calendarExpanded ? 'Свернуть календарь' : 'Развернуть календарь' }}
@@ -268,14 +292,25 @@ watch(resourceId, () => {
       <Button
         v-if="resourceId"
         type="button"
+        variant="glass"
         @click="openBookingModal"
       >
         Новая бронь
       </Button>
+      <div class="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+        <span class="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/50 px-2 py-1">
+          <span class="size-2 rounded-full bg-primary/80" />
+          Мои брони
+        </span>
+        <span class="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/50 px-2 py-1">
+          <span class="size-2 rounded-full bg-slate-400/80" />
+          Другие
+        </span>
+      </div>
     </div>
     <div
       v-show="calendarExpanded"
-      class="relative mb-6 min-h-[200px] rounded-md border border-border/50 bg-muted/25"
+      class="glass-panel relative mb-6 min-h-[200px] p-3"
     >
       <LoadingOverlay v-if="loading && resourceId" />
       <FullCalendar
@@ -349,56 +384,102 @@ watch(resourceId, () => {
         </Button>
       </template>
     </FormDialog>
-  </div>
+  </section>
 </template>
 
 <style scoped>
 :deep(.fc) {
-  --fc-border-color: hsl(220 16% 91%);
+  --fc-border-color: hsl(var(--border) / 0.45);
   --fc-page-bg-color: transparent;
-  --fc-neutral-bg-color: hsl(220 14% 98%);
-  --fc-list-event-hover-bg-color: hsl(220 20% 96%);
-  --fc-highlight-color: hsl(220 45% 94%);
-  --fc-button-bg-color: hsl(220 14% 97%);
-  --fc-button-border-color: hsl(220 13% 88%);
-  --fc-button-text-color: hsl(220 9% 44%);
-  --fc-button-hover-bg-color: hsl(220 14% 94%);
-  --fc-button-hover-border-color: hsl(220 13% 84%);
-  --fc-button-active-bg-color: hsl(220 14% 91%);
-  --fc-today-bg-color: hsl(220 40% 96%);
+  --fc-neutral-bg-color: hsl(var(--background) / 0.25);
+  --fc-list-event-hover-bg-color: hsl(var(--accent) / 0.35);
+  --fc-highlight-color: hsl(var(--accent) / 0.45);
+  --fc-button-bg-color: hsl(var(--background) / 0.5);
+  --fc-button-border-color: hsl(var(--border) / 0.55);
+  --fc-button-text-color: hsl(var(--muted-foreground));
+  --fc-button-hover-bg-color: hsl(var(--accent) / 0.45);
+  --fc-button-hover-border-color: hsl(var(--border) / 0.75);
+  --fc-button-active-bg-color: hsl(var(--accent) / 0.65);
+  --fc-today-bg-color: hsl(var(--accent) / 0.35);
+  border-radius: 0.9rem;
+}
+
+:deep(.fc .fc-toolbar.fc-header-toolbar) {
+  margin-bottom: 1rem;
+}
+
+:deep(.fc .fc-toolbar-title) {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+:deep(.fc .fc-button) {
+  border-radius: 0.75rem;
+  box-shadow: none;
+}
+
+:deep(.fc .fc-scrollgrid) {
+  border-radius: 0.8rem;
+  overflow: hidden;
+  background: hsl(var(--background) / 0.28);
+  backdrop-filter: blur(5px);
 }
 
 :deep(.fc .fc-col-header-cell) {
-  color: hsl(220 9% 42%);
-  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  font-weight: 600;
+  font-size: 0.83rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  background: hsl(var(--background) / 0.32);
 }
 
 :deep(.fc .fc-timegrid-axis-cushion),
 :deep(.fc .fc-timegrid-slot-label) {
-  color: hsl(220 8% 52%);
+  color: hsl(var(--muted-foreground));
+  font-size: 0.78rem;
 }
 
 :deep(.fc .fc-timegrid-slot) {
-  border-color: hsl(220 16% 93%);
+  border-color: hsl(var(--border) / 0.4);
 }
 
 :deep(.fc .fc-button-primary) {
-  background-color: hsl(220 32% 91%);
-  border-color: hsl(220 22% 84%);
-  color: hsl(222 26% 38%);
+  background-color: hsl(var(--background) / 0.56);
+  border-color: hsl(var(--border) / 0.6);
+  color: hsl(var(--foreground));
+  backdrop-filter: blur(6px);
 }
 
 :deep(.fc .fc-button-primary:not(:disabled):hover) {
-  background-color: hsl(220 32% 87%);
-  border-color: hsl(220 22% 78%);
-  color: hsl(222 28% 32%);
+  background-color: hsl(var(--accent) / 0.6);
+  border-color: hsl(var(--border) / 0.75);
+  color: hsl(var(--foreground));
+}
+
+:deep(.fc .fc-button-primary:not(:disabled).fc-button-active) {
+  background-color: hsl(var(--primary) / 0.82);
+  border-color: hsl(var(--primary) / 0.92);
+  color: hsl(var(--primary-foreground));
 }
 
 :deep(.fc .fc-event) {
   border-width: 1px;
+  border-radius: 0.55rem;
+  box-shadow: 0 8px 18px -14px rgba(0, 0, 0, 0.45);
 }
 
 :deep(.fc .fc-event-title) {
   font-weight: 500;
+}
+
+:deep(.fc .fc-timegrid-now-indicator-line) {
+  border-color: hsl(var(--primary) / 0.8);
+}
+
+:deep(.fc .fc-timegrid-now-indicator-arrow) {
+  border-top-color: hsl(var(--primary) / 0.8);
+  border-bottom-color: hsl(var(--primary) / 0.8);
 }
 </style>

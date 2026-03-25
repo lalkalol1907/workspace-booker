@@ -10,12 +10,9 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false);
 
   const isAuthenticated = computed(() => !!token.value);
-  const isSuperAdmin = computed(
-    () => user.value?.role === 'super_admin',
-  );
+  const isSuperAdmin = computed(() => user.value?.role === 'super_admin');
   const isAdmin = computed(
-    () =>
-      user.value?.role === 'admin' || user.value?.role === 'super_admin',
+    () => user.value?.role === 'admin' || user.value?.role === 'super_admin',
   );
 
   function setToken(t: string | null) {
@@ -32,7 +29,11 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       user.value = await http<MeResponse>('/auth/me');
       if (user.value.role === 'super_admin') {
-        await useTenantContextStore().ensureLoadedForSuperAdmin();
+        try {
+          await useTenantContextStore().ensureLoadedForSuperAdmin();
+        } catch {
+          // Не блокируем успешный логин, если загрузка tenant-контекста временно недоступна.
+        }
       }
     } finally {
       loading.value = false;
@@ -41,16 +42,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(payload: { email: string; password: string }) {
     const res = await http<TokenResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-    setToken(res.accessToken);
-    await fetchMe();
-  }
-
-  /** Вход суперадмина платформы (без привязки к host тенанта). */
-  async function platformLogin(payload: { email: string; password: string }) {
-    const res = await http<TokenResponse>('/auth/platform/login', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -94,7 +85,6 @@ export const useAuthStore = defineStore('auth', () => {
     isSuperAdmin,
     isAdmin,
     login,
-    platformLogin,
     changePassword,
     logout,
     fetchMe,

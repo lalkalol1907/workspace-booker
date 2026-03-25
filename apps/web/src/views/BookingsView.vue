@@ -40,9 +40,14 @@ async function cancelRow(id: string) {
 </script>
 
 <template>
-  <div>
-    <h1>Мои бронирования</h1>
-    <div class="relative rounded-md border">
+  <section class="space-y-4">
+    <div class="glass-panel px-5 py-4">
+      <h1>Мои бронирования</h1>
+      <p class="text-sm text-muted-foreground">
+        Управляйте своими активными бронированиями и историей.
+      </p>
+    </div>
+    <div class="glass-panel relative p-3">
       <LoadingOverlay v-if="loading" />
       <Table>
         <TableHeader>
@@ -94,5 +99,5 @@ async function cancelRow(id: string) {
         </TableBody>
       </Table>
     </div>
-  </div>
+  </section>
 </template>
