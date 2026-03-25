@@ -1,8 +1,11 @@
 # Подстановка только ${API_UPSTREAM} и ${PLATFORM_HOST}.
+# Важно: основной tenant web — default_server. Иначе любой Host, не совпавший
+# с PLATFORM_HOST, попадёт в первый server (платформа).
+
 server {
-  listen 80;
-  listen 443 ssl;
-  server_name ${PLATFORM_HOST};
+  listen 80 default_server;
+  listen 443 ssl default_server;
+  server_name _;
 
   ssl_certificate /etc/nginx/ssl/cert.crt;
   ssl_certificate_key /etc/nginx/ssl/private.key;
@@ -10,7 +13,7 @@ server {
   ssl_protocols       TLSv1.2 TLSv1.3;
   ssl_ciphers         HIGH:!aNULL:!MD5;
 
-  root /usr/share/nginx/admin;
+  root /usr/share/nginx/html;
   index index.html;
 
   location /api/ {
@@ -31,7 +34,7 @@ server {
 server {
   listen 80;
   listen 443 ssl;
-  server_name _;
+  server_name ${PLATFORM_HOST};
 
   ssl_certificate /etc/nginx/ssl/cert.crt;
   ssl_certificate_key /etc/nginx/ssl/private.key;
@@ -39,7 +42,7 @@ server {
   ssl_protocols       TLSv1.2 TLSv1.3;
   ssl_ciphers         HIGH:!aNULL:!MD5;
 
-  root /usr/share/nginx/html;
+  root /usr/share/nginx/admin;
   index index.html;
 
   location /api/ {
