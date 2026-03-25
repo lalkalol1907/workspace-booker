@@ -36,7 +36,7 @@ export interface OrganizationSummary {
   id: string;
   name: string;
   slug: string;
-  host: string;
+  hosts: string[];
   createdAt: string;
 }
 

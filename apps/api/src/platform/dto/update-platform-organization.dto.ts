@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, Length, Matches } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsString,
+  Length,
+  Matches,
+} from 'class-validator';
 
 export class UpdatePlatformOrganizationDto {
   @ApiProperty()
@@ -13,8 +20,14 @@ export class UpdatePlatformOrganizationDto {
   @Length(1, 128)
   slug!: string;
 
-  @ApiProperty({ description: 'Hostname for this tenant' })
-  @IsString()
-  @Length(1, 255)
-  host!: string;
+  @ApiProperty({
+    type: [String],
+    description: 'Hostnames for this tenant (replaces the previous list)',
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(50)
+  @IsString({ each: true })
+  @Length(1, 255, { each: true })
+  hosts!: string[];
 }

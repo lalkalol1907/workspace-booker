@@ -48,7 +48,9 @@ export const useTenantContextStore = defineStore('tenantContext', () => {
     }
 
     const currentHost = normalizeHost(window.location.hostname);
-    const matched = list.find((o) => normalizeHost(o.host) === currentHost);
+    const matched = list.find((o) =>
+      o.hosts.some((h) => normalizeHost(h) === currentHost),
+    );
     setSelectedOrgId(matched?.id ?? list[0].id);
   }
 

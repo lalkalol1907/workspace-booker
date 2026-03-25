@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { UserRole } from '../common/enums/user-role.enum';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { normalizeTenantHost } from '../common/utils/tenant-host';
+import { OrganizationHost } from '../entities/organization-host.entity';
 import { Organization } from '../entities/organization.entity';
 import { User } from '../entities/user.entity';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -21,26 +22,49 @@ import { TokenResponseDto } from './dto/token-response.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(Organization)
-    private readonly orgRepo: Repository<Organization>,
+    @InjectRepository(OrganizationHost)
+    private readonly orgHostRepo: Repository<OrganizationHost>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {}
 
-  async login(dto: LoginDto, requestHost: string): Promise<TokenResponseDto> {
+  private async resolveTenantFromHost(
+    requestHost: string,
+  ): Promise<Organization | null> {
     const host = normalizeTenantHost(requestHost);
     const fallback = this.config.get<string>('DEFAULT_TENANT_HOST');
-    let org = host ? await this.orgRepo.findOne({ where: { host } }) : null;
-    if (!org && (host === '127.0.0.1' || host === '::1')) {
-      org = await this.orgRepo.findOne({ where: { host: 'localhost' } });
+    const candidates: string[] = [];
+    if (host) {
+      candidates.push(host);
     }
-    if (!org && fallback) {
-      org = await this.orgRepo.findOne({
-        where: { host: normalizeTenantHost(fallback) },
+    if (
+      (host === '127.0.0.1' || host === '::1') &&
+      !candidates.includes('localhost')
+    ) {
+      candidates.push('localhost');
+    }
+    if (fallback) {
+      const fb = normalizeTenantHost(fallback);
+      if (fb && !candidates.includes(fb)) {
+        candidates.push(fb);
+      }
+    }
+    for (const h of candidates) {
+      const link = await this.orgHostRepo.findOne({
+        where: { host: h },
+        relations: ['organization'],
       });
+      if (link?.organization) {
+        return link.organization;
+      }
     }
+    return null;
+  }
+
+  async login(dto: LoginDto, requestHost: string): Promise<TokenResponseDto> {
+    const org = await this.resolveTenantFromHost(requestHost);
     if (!org) {
       throw new UnauthorizedException();
     }

@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { Location } from './location.entity';
+import { OrganizationHost } from './organization-host.entity';
 
 @Entity('organizations')
 export class Organization {
@@ -19,12 +20,11 @@ export class Organization {
   @Column({ type: 'varchar', length: 128, unique: true })
   slug!: string;
 
-  /** Hostname this tenant is served on (e.g. booker.acme.com, localhost). */
-  @Column({ type: 'varchar', length: 255, unique: true })
-  host!: string;
-
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
+
+  @OneToMany(() => OrganizationHost, (h) => h.organization)
+  hosts!: OrganizationHost[];
 
   @OneToMany(() => User, (u) => u.organization)
   users!: User[];

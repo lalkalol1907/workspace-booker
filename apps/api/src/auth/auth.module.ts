@@ -7,7 +7,7 @@ type JwtExpiresIn = NonNullable<
   NonNullable<JwtModuleOptions['signOptions']>['expiresIn']
 >;
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Organization } from '../entities/organization.entity';
+import { OrganizationHost } from '../entities/organization-host.entity';
 import { User } from '../entities/user.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -16,7 +16,7 @@ import { PlatformBootstrapService } from './platform-bootstrap.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Organization, User]),
+    TypeOrmModule.forFeature([OrganizationHost, User]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

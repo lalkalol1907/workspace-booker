@@ -10,8 +10,8 @@ export class OrganizationSummaryDto {
   @ApiProperty()
   slug!: string;
 
-  @ApiProperty()
-  host!: string;
+  @ApiProperty({ type: [String], description: 'Hostnames for tenant login' })
+  hosts!: string[];
 
   @ApiProperty()
   createdAt!: Date;
