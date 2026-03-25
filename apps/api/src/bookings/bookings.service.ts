@@ -53,6 +53,7 @@ export class BookingsService {
       qb.andWhere('b.startsAt < :to', { to: query.to });
     }
     qb.leftJoinAndSelect('b.resource', 'resource');
+    qb.leftJoinAndSelect('b.user', 'user');
     qb.orderBy('b.startsAt', 'ASC');
     const rows = await qb.getMany();
     return rows.map((b) => this.toDto(b));
@@ -65,7 +66,7 @@ export class BookingsService {
   ): Promise<BookingResponseDto> {
     const b = await this.repo.findOne({
       where: { id, organizationId },
-      relations: ['resource'],
+      relations: ['resource', 'user'],
     });
     if (!b) {
       throw new NotFoundException();
@@ -81,11 +82,6 @@ export class BookingsService {
     organizationId: string,
     dto: CreateBookingDto,
   ): Promise<BookingResponseDto> {
-    if (user.role === UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException(
-        'Platform admin cannot create bookings; use a tenant account or invite a user.',
-      );
-    }
     const res = await this.resources.findOne({
       where: {
         id: dto.resourceId,
@@ -120,8 +116,11 @@ export class BookingsService {
       status: BookingStatus.CONFIRMED,
     });
     await this.repo.save(b);
-    b.resource = res;
-    return this.toDto(b);
+    const withRelations = await this.repo.findOne({
+      where: { id: b.id },
+      relations: ['resource', 'user'],
+    });
+    return this.toDto(withRelations!);
   }
 
   async update(
@@ -145,7 +144,7 @@ export class BookingsService {
     await this.repo.save(b);
     const withResource = await this.repo.findOne({
       where: { id: b.id },
-      relations: ['resource'],
+      relations: ['resource', 'user'],
     });
     return this.toDto(withResource!);
   }
@@ -174,6 +173,8 @@ export class BookingsService {
       resourceId: b.resourceId,
       resourceName: b.resource?.name ?? '',
       userId: b.userId,
+      userDisplayName: b.user?.displayName ?? '',
+      userEmail: b.user?.email ?? '',
       startsAt: b.startsAt,
       endsAt: b.endsAt,
       title: b.title,

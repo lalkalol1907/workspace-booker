@@ -63,6 +63,8 @@ export interface BookingDto {
   resourceId: string;
   resourceName: string;
   userId: string;
+  userDisplayName: string;
+  userEmail: string;
   startsAt: string;
   endsAt: string;
   title: string;

@@ -11,6 +11,7 @@ import Button from '@/components/ui/button/Button.vue';
 import FormDialog from '@/components/ui/dialog/FormDialog.vue';
 import Input from '@/components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
+import ConfirmDialog from '@/components/ui/alert-dialog/ConfirmDialog.vue';
 import LoadingOverlay from '@/components/ui/loading-overlay/LoadingOverlay.vue';
 import { http } from '@/api/http';
 import type { BookingDto, ResourceDto } from '@/api/types';
@@ -39,7 +40,31 @@ const bookingTitle = ref('');
 const bookingStart = ref('');
 const bookingEnd = ref('');
 
+const cancelConfirmOpen = ref(false);
+const cancelLoading = ref(false);
+const pendingCancel = ref<{
+  id: string;
+  title: string;
+  start: Date | null;
+  end: Date | null;
+  userDisplayName: string;
+  userEmail: string;
+} | null>(null);
+
 const calendarExpanded = ref(false);
+
+// Control visible time range (for timeGrid views).
+// Default range: 07:00 - 22:00; expanded via buttons to midnight bounds.
+const fromMidnight = ref(false);
+const toMidnight = ref(false);
+
+const slotMinTime = computed(() =>
+  fromMidnight.value ? '00:00:00' : '07:00:00',
+);
+const slotMaxTime = computed(() =>
+  toMidnight.value ? '24:00:00' : '22:00:00',
+);
+const scrollTime = computed(() => (fromMidnight.value ? '00:00:00' : '08:00:00'));
 
 watch(
   isMdUp,
@@ -75,6 +100,19 @@ watch(calendarExpanded, async (open) => {
     await nextTick();
     calendarRef.value?.getApi?.()?.updateSize?.();
   }
+});
+
+watch([fromMidnight, toMidnight], async () => {
+  await nextTick();
+  const api = calendarRef.value?.getApi?.();
+  if (!api) {
+    return;
+  }
+  // Apply time-grid bounds without fully recreating the calendar.
+  api.setOption?.('slotMinTime', slotMinTime.value);
+  api.setOption?.('slotMaxTime', slotMaxTime.value);
+  api.setOption?.('scrollTime', scrollTime.value);
+  api.updateSize?.();
 });
 
 watch(bookingModalOpen, (open) => {
@@ -131,6 +169,11 @@ async function loadEvents(info: EventSourceFuncArg): Promise<EventInput[]> {
           title: b.title,
           start: b.startsAt,
           end: b.endsAt,
+          extendedProps: {
+            userDisplayName: b.userDisplayName,
+            userEmail: b.userEmail,
+            userId: b.userId,
+          },
           ...palette,
         };
       });
@@ -224,15 +267,53 @@ const calendarOptions = computed(() => ({
   },
   allDaySlot: false,
   nowIndicator: true,
-  scrollTime: '08:00:00',
-  slotMinTime: '07:00:00',
-  slotMaxTime: '22:00:00',
+  scrollTime: scrollTime.value,
+  slotMinTime: slotMinTime.value,
+  slotMaxTime: slotMaxTime.value,
   slotDuration: '00:30:00',
   slotLabelInterval: '01:00',
   selectable: true,
   selectMirror: true,
   height: 'auto' as const,
   contentHeight: isMdUp.value ? 620 : 440,
+  eventContent: (arg: any) => {
+    const ext = arg.event.extendedProps as unknown as {
+      userDisplayName?: string;
+      userEmail?: string;
+    };
+
+    const userName = ext.userDisplayName ?? '';
+    const userEmail = ext.userEmail ?? '';
+
+    const tooltip = `${userName}${userEmail ? ` (${userEmail})` : ''}`.trim();
+    const title = arg.event.title ?? '';
+
+    const escapeHtml = (s: string) =>
+      s
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+
+    // FullCalendar accepts HTML strings for eventContent.
+    return {
+      html: `
+        <div style="display:flex;flex-direction:column;gap:2px;padding:0 4px;">
+          <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;font-size:12px;" title="${escapeHtml(
+            String(title),
+          )}">
+            ${escapeHtml(String(title))}
+          </div>
+          <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;opacity:0.8;" title="${escapeHtml(
+            tooltip,
+          )}">
+            ${escapeHtml(String(userName))} ${escapeHtml(String(userEmail))}
+          </div>
+        </div>
+      `,
+    };
+  },
   events: (
     info: EventSourceFuncArg,
     success: (events: EventInput[]) => void,
@@ -245,16 +326,76 @@ const calendarOptions = computed(() => ({
       );
   },
   select: handleSelect,
-  eventClick: (arg: {
-    event: { title: string; start: Date | null; end: Date | null };
-    jsEvent: Event;
-  }) => {
+  eventClick: (arg: any) => {
     arg.jsEvent.preventDefault();
+    const ext = arg.event.extendedProps as unknown as {
+      userDisplayName?: string;
+      userEmail?: string;
+      userId?: string;
+    };
+
+    const userDisplayName = ext.userDisplayName ?? '';
+    const userEmail = ext.userEmail ?? '';
+    const bookingUserId = ext.userId;
+
+    const canCancel =
+      auth.isAdmin || (bookingUserId != null && bookingUserId === auth.user?.userId);
+
+    if (canCancel) {
+      pendingCancel.value = {
+        id: String((arg.event as any).id),
+        title: arg.event.title,
+        start: arg.event.start,
+        end: arg.event.end,
+        userDisplayName,
+        userEmail,
+      };
+      cancelConfirmOpen.value = true;
+      return;
+    }
+
     const start = arg.event.start?.toLocaleString() ?? '';
     const end = arg.event.end?.toLocaleString() ?? '';
-    toast.info(`${arg.event.title}\n${start} — ${end}`);
+    const suffix = userEmail ? `\n${userDisplayName} (${userEmail})` : `\n${userDisplayName}`;
+    toast.info(`${arg.event.title}\n${start} — ${end}${suffix}`);
   },
 }));
+
+async function confirmCancel() {
+  if (cancelLoading.value) {
+    return;
+  }
+  const target = pendingCancel.value;
+  if (!target) {
+    return;
+  }
+  cancelLoading.value = true;
+  try {
+    await http(`/bookings/${target.id}`, { method: 'DELETE' });
+    toast.success('Бронь отменена');
+    cancelConfirmOpen.value = false;
+    pendingCancel.value = null;
+    refetchCalendar();
+  } catch {
+    toast.error('Не удалось отменить бронь');
+  } finally {
+    cancelLoading.value = false;
+  }
+}
+
+const cancelDescription = computed(() => {
+  if (!pendingCancel.value) {
+    return '';
+  }
+
+  const start = pendingCancel.value.start?.toLocaleString() ?? '';
+  const end = pendingCancel.value.end?.toLocaleString() ?? '';
+  const occupied = pendingCancel.value.userEmail
+    ? `${pendingCancel.value.userDisplayName} (${pendingCancel.value.userEmail})`
+    : pendingCancel.value.userDisplayName;
+
+  return `Бронь: "${pendingCancel.value.title}"\n${start} — ${end}\nЗанял: ${occupied}`;
+});
 
 watch(isMdUp, async () => {
   await nextTick();
@@ -335,6 +476,24 @@ watch(resourceId, () => {
           @click="openBookingModal"
         >
           Новая бронь
+        </Button>
+        <Button
+          v-if="resourceId && isMdUp"
+          type="button"
+          variant="glass"
+          class="shrink-0"
+          @click="fromMidnight = !fromMidnight"
+        >
+          {{ fromMidnight ? 'С 07:00' : 'С 00:00' }}
+        </Button>
+        <Button
+          v-if="resourceId && isMdUp"
+          type="button"
+          variant="glass"
+          class="shrink-0"
+          @click="toMidnight = !toMidnight"
+        >
+          {{ toMidnight ? 'До 22:00' : 'До 24:00' }}
         </Button>
       </div>
       <div
@@ -426,6 +585,17 @@ watch(resourceId, () => {
         </Button>
       </template>
     </FormDialog>
+
+    <ConfirmDialog
+      v-model:open="cancelConfirmOpen"
+      title="Отменить бронирование?"
+      :description="cancelDescription"
+      confirmText="Отменить"
+      cancelText="Назад"
+      destructive
+      @confirm="confirmCancel"
+      @cancel="() => { cancelConfirmOpen = false; pendingCancel = null; }"
+    />
   </section>
 </template>
 

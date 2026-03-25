@@ -14,6 +14,16 @@ export class BookingResponseDto {
   @ApiProperty()
   userId!: string;
 
+  @ApiProperty({
+    description: 'Display name of booking user (if joined)',
+  })
+  userDisplayName!: string;
+
+  @ApiProperty({
+    description: 'Email of booking user (if joined)',
+  })
+  userEmail!: string;
+
   @ApiProperty()
   startsAt!: Date;
 
