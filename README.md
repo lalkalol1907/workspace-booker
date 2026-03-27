@@ -122,7 +122,8 @@ pnpm --filter web run dev
 # Admin
 pnpm --filter admin run dev
 
-# Worker
+# Worker (сначала соберите API — worker подключает скомпилированные сущности из пакета `api`)
+pnpm --filter api run build
 pnpm --filter worker run start:dev
 ```
 

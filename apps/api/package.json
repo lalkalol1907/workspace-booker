@@ -5,6 +5,16 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "exports": {
+    "./entities/*": {
+      "types": "./src/entities/*.ts",
+      "default": "./dist/entities/*.js"
+    },
+    "./common/enums/*": {
+      "types": "./src/common/enums/*.ts",
+      "default": "./dist/common/enums/*.js"
+    }
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

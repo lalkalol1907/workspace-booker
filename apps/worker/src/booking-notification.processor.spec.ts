@@ -1,11 +1,13 @@
 import { describe, it, expect, rstest } from '@rstest/core';
 
-rstest.mock('api/src/entities/booking.entity', () => ({ Booking: class {} }));
-rstest.mock('api/src/entities/user.entity', () => ({ User: class {} }));
-rstest.mock('api/src/entities/resource.entity', () => ({ Resource: class {} }));
-rstest.mock('api/src/entities/organization.entity', () => ({ Organization: class {} }));
-rstest.mock('api/src/entities/organization-host.entity', () => ({ OrganizationHost: class {} }));
-rstest.mock('api/src/entities/location.entity', () => ({ Location: class {} }));
+rstest.mock('api/entities/booking.entity', () => ({ Booking: class {} }));
+rstest.mock('api/entities/user.entity', () => ({ User: class {} }));
+rstest.mock('api/entities/resource.entity', () => ({ Resource: class {} }));
+rstest.mock('api/entities/organization.entity', () => ({ Organization: class {} }));
+rstest.mock('api/entities/organization-host.entity', () => ({
+  OrganizationHost: class {},
+}));
+rstest.mock('api/entities/location.entity', () => ({ Location: class {} }));
 
 import { BookingNotificationProcessor } from './booking-notification.processor';
 

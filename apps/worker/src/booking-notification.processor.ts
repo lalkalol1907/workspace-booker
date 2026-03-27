@@ -4,8 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Job } from 'bullmq';
 import { Repository } from 'typeorm';
-import { Booking } from 'api/src/entities/booking.entity';
-import { BookingStatus } from 'api/src/common/enums/booking-status.enum';
+import { Booking } from 'api/entities/booking.entity';
+import { BookingStatus } from 'api/common/enums/booking-status.enum';
 
 interface BookingJobData {
   bookingId: string;
