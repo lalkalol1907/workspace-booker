@@ -112,6 +112,7 @@ export class UsersService {
     const tempPlain = generateTemporaryPassword();
     target.passwordHash = await bcrypt.hash(tempPlain, 10);
     target.mustChangePassword = true;
+    target.tokenVersion += 1;
     await this.userRepo.save(target);
     return {
       userId: target.id,

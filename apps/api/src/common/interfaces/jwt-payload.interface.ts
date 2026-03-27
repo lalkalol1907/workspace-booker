@@ -6,4 +6,5 @@ export interface JwtPayload {
   organizationId: string | null;
   email: string;
   role: UserRole;
+  tokenVersion: number;
 }

@@ -29,6 +29,7 @@ const mockUser = (overrides: Partial<User> = {}): User =>
     displayName: 'Test User',
     role: UserRole.MEMBER,
     mustChangePassword: false,
+    tokenVersion: 0,
     organization: { name: 'Test Org' },
     ...overrides,
   }) as User;
@@ -182,6 +183,7 @@ describe('AuthService', () => {
         organizationId: 'org-1',
         email: 'user@example.com',
         role: UserRole.MEMBER,
+        tokenVersion: 0,
       });
 
       expect(result.userId).toBe('user-1');
@@ -199,6 +201,7 @@ describe('AuthService', () => {
           organizationId: 'org-1',
           email: 'x@x.com',
           role: UserRole.MEMBER,
+          tokenVersion: 0,
         }),
       ).rejects.toThrow(UnauthorizedException);
     });
@@ -217,12 +220,14 @@ describe('AuthService', () => {
           organizationId: 'org-1',
           email: 'user@example.com',
           role: UserRole.MEMBER,
+          tokenVersion: 0,
         },
         { currentPassword: 'correct-password', newPassword: 'new-password' },
       );
 
       expect(userRepo.save).toHaveBeenCalled();
       expect(user.mustChangePassword).toBe(false);
+      expect(user.tokenVersion).toBe(1);
     });
 
     it('throws on wrong current password', async () => {
@@ -236,6 +241,7 @@ describe('AuthService', () => {
             organizationId: 'org-1',
             email: 'x@x.com',
             role: UserRole.MEMBER,
+            tokenVersion: 0,
           },
           { currentPassword: 'wrong', newPassword: 'new' },
         ),
@@ -253,6 +259,7 @@ describe('AuthService', () => {
             organizationId: 'org-1',
             email: 'x@x.com',
             role: UserRole.MEMBER,
+            tokenVersion: 0,
           },
           {
             currentPassword: 'correct-password',
@@ -282,7 +289,7 @@ describe('AuthService', () => {
       );
 
       expect(jwt.sign).toHaveBeenCalledWith(
-        expect.objectContaining({ organizationId: null }),
+        expect.objectContaining({ organizationId: null, tokenVersion: 0 }),
       );
     });
   });

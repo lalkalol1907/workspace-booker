@@ -28,6 +28,7 @@ const adminPayload: JwtPayload = {
   organizationId: ORG_ID,
   email: 'admin@test.com',
   role: UserRole.ADMIN,
+  tokenVersion: 0,
 };
 
 const superAdminPayload: JwtPayload = {
@@ -35,6 +36,7 @@ const superAdminPayload: JwtPayload = {
   organizationId: null,
   email: 'sa@test.com',
   role: UserRole.SUPER_ADMIN,
+  tokenVersion: 0,
 };
 
 const mockUser = (overrides: Partial<User> = {}): User =>
@@ -46,6 +48,7 @@ const mockUser = (overrides: Partial<User> = {}): User =>
     displayName: 'Member',
     role: UserRole.MEMBER,
     mustChangePassword: false,
+    tokenVersion: 0,
     ...overrides,
   }) as User;
 
@@ -141,9 +144,10 @@ describe('UsersService', () => {
   });
 
   describe('resetPassword', () => {
-    it('resets password and returns temp credentials', async () => {
+    it('resets password and increments tokenVersion', async () => {
       const { service, userRepo } = createService();
-      userRepo.findOne.mockResolvedValue(mockUser());
+      const user = mockUser();
+      userRepo.findOne.mockResolvedValue(user);
 
       const result = await service.resetPassword(
         adminPayload,
@@ -153,6 +157,7 @@ describe('UsersService', () => {
 
       expect(result.temporaryPassword).toBeDefined();
       expect(userRepo.save).toHaveBeenCalled();
+      expect(user.tokenVersion).toBe(1);
     });
 
     it('throws ForbiddenException when resetting own password', async () => {

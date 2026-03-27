@@ -30,6 +30,7 @@ const memberPayload: JwtPayload = {
   organizationId: ORG_ID,
   email: 'member@test.com',
   role: UserRole.MEMBER,
+  tokenVersion: 0,
 };
 
 const adminPayload: JwtPayload = {
@@ -37,6 +38,7 @@ const adminPayload: JwtPayload = {
   organizationId: ORG_ID,
   email: 'admin@test.com',
   role: UserRole.ADMIN,
+  tokenVersion: 0,
 };
 
 const mockBooking = (overrides: Partial<Booking> = {}): Booking =>

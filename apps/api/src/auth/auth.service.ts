@@ -172,19 +172,20 @@ export class AuthService {
     }
     user.passwordHash = await bcrypt.hash(dto.newPassword, 10);
     user.mustChangePassword = false;
+    user.tokenVersion += 1;
     await this.userRepo.save(user);
   }
 
   private issueTokens(user: User): TokenResponseDto {
     const jwtPayload: JwtPayload = {
       sub: user.id,
-      /** Super admins always get null here so JWT matches JwtStrategy (home org may stay in DB). */
       organizationId:
         user.role === UserRole.SUPER_ADMIN
           ? null
           : (user.organizationId ?? null),
       email: user.email,
       role: user.role,
+      tokenVersion: user.tokenVersion,
     };
     return {
       accessToken: this.jwt.sign(jwtPayload),

@@ -30,6 +30,7 @@ const mockUser = (overrides: Partial<User> = {}): User =>
     displayName: 'Admin',
     role: UserRole.SUPER_ADMIN,
     mustChangePassword: false,
+    tokenVersion: 0,
     ...overrides,
   }) as User;
 
