@@ -96,18 +96,19 @@ cp apps/api/.env.example apps/api/.env
 
 Основные переменные:
 
-| Переменная | Описание | Пример |
-|------------|----------|--------|
-| `DATABASE_URL` | Подключение к PostgreSQL | `postgres://user:pass@localhost:5432/booker` |
-| `JWT_SECRET` | Секрет для подписи токенов | `my-secret-key` |
-| `JWT_EXPIRES_IN` | Время жизни access-токена | `15m` |
-| `REDIS_URL` | Подключение к Redis | `redis://localhost:6379` |
-| `DEFAULT_TENANT_HOST` | Хост по умолчанию для тенанта | `localhost` |
-| `SMTP_HOST` | SMTP-сервер | `smtp.example.com` |
-| `SMTP_PORT` | Порт SMTP | `587` |
-| `SMTP_USER` | Логин SMTP | |
-| `SMTP_PASS` | Пароль SMTP | |
-| `SMTP_FROM` | Адрес отправителя | `noreply@example.com` |
+| Переменная            | Описание                                    | Пример                                       |
+|-----------------------|---------------------------------------------|----------------------------------------------|
+| `DATABASE_URL`        | Подключение к PostgreSQL                    | `postgres://user:pass@localhost:5432/booker` |
+| `JWT_SECRET`          | Секрет для подписи токенов                  | `my-secret-key`                              |
+| `JWT_EXPIRES_IN`      | Время жизни access-токена                   | `15m`                                        |
+| `REDIS_URL`           | Подключение к Redis                         | `redis://localhost:6379`                     |
+| `DEFAULT_TENANT_HOST` | Хост по умолчанию для тенанта               | `localhost`                                  |
+| `PLATFORM_HOST`       | Хост по умолчанию для платформенной админки | `platform.localhost`                         |
+| `SMTP_HOST`           | SMTP-сервер                                 | `smtp.example.com`                           |
+| `SMTP_PORT`           | Порт SMTP                                   | `587`                                        |
+| `SMTP_USER`           | Логин SMTP                                  |                                              |
+| `SMTP_PASS`           | Пароль SMTP                                 |                                              |
+| `SMTP_FROM`           | Адрес отправителя                           | `noreply@example.com`                        |
 
 ### Запуск в dev-режиме
 
