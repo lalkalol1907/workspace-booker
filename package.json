@@ -6,7 +6,8 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "pnpm -r run test"
+    "test": "pnpm -r run test",
+    "test:cov": "pnpm -r run test:cov"
   },
   "keywords": [],
   "author": "",

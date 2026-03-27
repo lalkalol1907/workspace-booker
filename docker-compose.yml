@@ -9,6 +9,7 @@ services:
       - "3000"
     depends_on:
       - postgres
+      - redis
     restart: unless-stopped
 
   web:
@@ -27,16 +28,35 @@ services:
       - api
     restart: unless-stopped
 
+  worker:
+    image: lalkalol1907/workspace-booker-worker:${IMAGE_TAG:-latest}
+    networks:
+      - booker-network
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
   postgres:
     image: bitnamilegacy/postgresql
     networks:
       - booker-network
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     env_file:
       - .env
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - booker-network
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
     restart: unless-stopped
 
 networks:

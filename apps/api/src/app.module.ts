@@ -1,3 +1,4 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,6 +11,7 @@ import {
 } from './config';
 import { HealthModule } from './health/health.module';
 import { LocationsModule } from './locations/locations.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { ResourcesModule } from './resources/resources.module';
 import { PlatformModule } from './platform/platform.module';
 import { UsersModule } from './users/users.module';
@@ -28,6 +30,15 @@ import { UsersModule } from './users/users.module';
         return typeOrmOptionsFromPostgres(pg);
       },
     }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          url: config.get<string>('REDIS_URL', 'redis://localhost:6379'),
+        },
+      }),
+    }),
     HealthModule,
     AuthModule,
     LocationsModule,
@@ -35,6 +46,7 @@ import { UsersModule } from './users/users.module';
     BookingsModule,
     UsersModule,
     PlatformModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

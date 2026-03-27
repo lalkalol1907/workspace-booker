@@ -11,6 +11,7 @@ import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { isTenantAdmin } from '../common/utils/tenant-admin';
 import { Booking } from '../entities/booking.entity';
 import { Resource } from '../entities/resource.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 import { BookingQueryDto } from './dto/booking-query.dto';
 import { BookingResponseDto } from './dto/booking-response.dto';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -23,6 +24,7 @@ export class BookingsService {
     private readonly repo: Repository<Booking>,
     @InjectRepository(Resource)
     private readonly resources: Repository<Resource>,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async findAll(
@@ -126,6 +128,8 @@ export class BookingsService {
       status: BookingStatus.CONFIRMED,
     });
     await this.repo.save(b);
+    await this.notifications.sendCreated(b.id);
+    await this.notifications.scheduleReminder(b.id, b.startsAt);
     const withRelations = await this.repo.findOne({
       where: { id: b.id },
       relations: ['resource', 'user'],
@@ -148,10 +152,14 @@ export class BookingsService {
     if (!isTenantAdmin(user) && b.userId !== user.sub) {
       throw new ForbiddenException();
     }
+    const wasCancelled = b.status === BookingStatus.CANCELLED;
     if (dto.status !== undefined) {
       b.status = dto.status;
     }
     await this.repo.save(b);
+    if (!wasCancelled && b.status === BookingStatus.CANCELLED) {
+      await this.notifications.sendCancelled(b.id);
+    }
     const withResource = await this.repo.findOne({
       where: { id: b.id },
       relations: ['resource', 'user'],
@@ -175,6 +183,7 @@ export class BookingsService {
     }
     b.status = BookingStatus.CANCELLED;
     await this.repo.save(b);
+    await this.notifications.sendCancelled(b.id);
   }
 
   private toDto(b: Booking): BookingResponseDto {

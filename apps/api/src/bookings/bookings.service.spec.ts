@@ -20,6 +20,9 @@ rstest.mock('../entities/resource.entity', () => ({ Resource: class {} }));
 rstest.mock('../entities/organization-host.entity', () => ({
   OrganizationHost: class {},
 }));
+rstest.mock('../notifications/notifications.service', () => ({
+  NotificationsService: class {},
+}));
 
 import { BookingsService } from './bookings.service';
 
@@ -91,10 +94,19 @@ function createService() {
   const resourceRepo = {
     findOne: rstest.fn(),
   };
+  const notifications = {
+    sendCreated: rstest.fn().mockResolvedValue(undefined),
+    scheduleReminder: rstest.fn().mockResolvedValue(undefined),
+    sendCancelled: rstest.fn().mockResolvedValue(undefined),
+  };
 
-  const service = new BookingsService(bookingRepo as any, resourceRepo as any);
+  const service = new BookingsService(
+    bookingRepo as any,
+    resourceRepo as any,
+    notifications as any,
+  );
 
-  return { service, bookingRepo, resourceRepo, qb };
+  return { service, bookingRepo, resourceRepo, notifications, qb };
 }
 
 describe('BookingsService', () => {
