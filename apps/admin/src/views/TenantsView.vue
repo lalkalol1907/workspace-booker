@@ -215,7 +215,9 @@ async function submitPlatformAdmin() {
       id="platform-admins"
       class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm"
     >
-      <h2 class="mb-4 text-lg font-semibold">Админы платформы</h2>
+      <h2 class="mb-4 text-lg font-semibold">
+        Админы платформы
+      </h2>
       <form
         class="grid gap-3 md:grid-cols-3"
         @submit.prevent="submitPlatformAdmin"
@@ -293,15 +295,21 @@ async function submitPlatformAdmin() {
     </section>
 
     <section class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm">
-      <h1 class="mb-2 text-2xl font-semibold tracking-tight">Организации платформы</h1>
-      <p class="text-sm text-slate-600">Строгое управление доменами, slug и структурой тенантов.</p>
+      <h1 class="mb-2 text-2xl font-semibold tracking-tight">
+        Организации платформы
+      </h1>
+      <p class="text-sm text-slate-600">
+        Строгое управление доменами, slug и структурой тенантов.
+      </p>
     </section>
 
     <section
       id="create-tenant"
       class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm"
     >
-      <h2 class="mb-4 text-lg font-semibold">Создать организацию</h2>
+      <h2 class="mb-4 text-lg font-semibold">
+        Создать организацию
+      </h2>
       <form
         class="grid gap-4 md:grid-cols-2"
         @submit.prevent="submitCreate"
@@ -375,7 +383,9 @@ async function submitPlatformAdmin() {
       class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm"
     >
       <div class="mb-3 flex items-center justify-between">
-        <h2 class="text-lg font-semibold">Список</h2>
+        <h2 class="text-lg font-semibold">
+          Список
+        </h2>
         <button
           type="button"
           class="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
@@ -450,7 +460,9 @@ async function submitPlatformAdmin() {
       @click.self="editOpen = false"
     >
       <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-lg">
-        <h3 class="mb-4 text-lg font-semibold">Редактировать организацию</h3>
+        <h3 class="mb-4 text-lg font-semibold">
+          Редактировать организацию
+        </h3>
         <form
           class="space-y-4"
           @submit.prevent="submitEdit"

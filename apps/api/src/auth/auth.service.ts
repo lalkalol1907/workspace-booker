@@ -78,7 +78,10 @@ export class AuthService {
 
     let user: User | null = null;
     if (tenantUser) {
-      const okTenant = await bcrypt.compare(dto.password, tenantUser.passwordHash);
+      const okTenant = await bcrypt.compare(
+        dto.password,
+        tenantUser.passwordHash,
+      );
       if (okTenant) {
         user = tenantUser;
       }

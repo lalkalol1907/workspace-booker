@@ -106,10 +106,7 @@ export class UsersService {
     if (target.id === admin.sub) {
       throw new ForbiddenException();
     }
-    if (
-      target.role === UserRole.ADMIN &&
-      admin.role !== UserRole.SUPER_ADMIN
-    ) {
+    if (target.role === UserRole.ADMIN && admin.role !== UserRole.SUPER_ADMIN) {
       throw new ForbiddenException();
     }
     const tempPlain = generateTemporaryPassword();

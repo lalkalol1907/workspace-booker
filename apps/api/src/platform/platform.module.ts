@@ -7,9 +7,7 @@ import { PlatformController } from './platform.controller';
 import { PlatformService } from './platform.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Organization, OrganizationHost, User]),
-  ],
+  imports: [TypeOrmModule.forFeature([Organization, OrganizationHost, User])],
   controllers: [PlatformController],
   providers: [PlatformService],
 })

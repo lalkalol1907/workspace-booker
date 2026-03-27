@@ -39,7 +39,8 @@ export class UpdateResourceDto {
 
   @ApiPropertyOptional({
     nullable: true,
-    description: 'Максимальная длительность одной брони в минутах. null = без ограничения.',
+    description:
+      'Максимальная длительность одной брони в минутах. null = без ограничения.',
     example: 180,
   })
   @IsOptional()

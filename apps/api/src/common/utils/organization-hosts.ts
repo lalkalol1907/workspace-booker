@@ -10,7 +10,8 @@ export function normalizeOrganizationHostsInput(hosts: string[]): string[] {
       continue;
     }
     const h =
-      normalizeTenantHost(trimmed) || trimmed.toLowerCase().replace(/:\d+$/, '');
+      normalizeTenantHost(trimmed) ||
+      trimmed.toLowerCase().replace(/:\d+$/, '');
     if (!h || seen.has(h)) {
       continue;
     }

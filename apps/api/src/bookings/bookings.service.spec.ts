@@ -10,12 +10,16 @@ import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import type { Booking } from '../entities/booking.entity';
 import type { Resource } from '../entities/resource.entity';
 
-rstest.mock('../entities/organization.entity', () => ({ Organization: class {} }));
+rstest.mock('../entities/organization.entity', () => ({
+  Organization: class {},
+}));
 rstest.mock('../entities/user.entity', () => ({ User: class {} }));
 rstest.mock('../entities/booking.entity', () => ({ Booking: class {} }));
 rstest.mock('../entities/location.entity', () => ({ Location: class {} }));
 rstest.mock('../entities/resource.entity', () => ({ Resource: class {} }));
-rstest.mock('../entities/organization-host.entity', () => ({ OrganizationHost: class {} }));
+rstest.mock('../entities/organization-host.entity', () => ({
+  OrganizationHost: class {},
+}));
 
 import { BookingsService } from './bookings.service';
 
@@ -86,10 +90,7 @@ function createService() {
     findOne: rstest.fn(),
   };
 
-  const service = new BookingsService(
-    bookingRepo as any,
-    resourceRepo as any,
-  );
+  const service = new BookingsService(bookingRepo as any, resourceRepo as any);
 
   return { service, bookingRepo, resourceRepo, qb };
 }

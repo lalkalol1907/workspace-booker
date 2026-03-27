@@ -34,8 +34,12 @@ async function submit() {
     <p class="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
       Platform Console
     </p>
-    <h1 class="mb-2 text-2xl font-semibold tracking-tight">Авторизация</h1>
-    <p class="mb-6 text-sm text-slate-600">Доступ только для super_admin.</p>
+    <h1 class="mb-2 text-2xl font-semibold tracking-tight">
+      Авторизация
+    </h1>
+    <p class="mb-6 text-sm text-slate-600">
+      Доступ только для super_admin.
+    </p>
     <form
       class="space-y-4"
       @submit.prevent="submit"

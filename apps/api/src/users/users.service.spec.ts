@@ -8,12 +8,16 @@ import { UserRole } from '../common/enums/user-role.enum';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import type { User } from '../entities/user.entity';
 
-rstest.mock('../entities/organization.entity', () => ({ Organization: class {} }));
+rstest.mock('../entities/organization.entity', () => ({
+  Organization: class {},
+}));
 rstest.mock('../entities/user.entity', () => ({ User: class {} }));
 rstest.mock('../entities/booking.entity', () => ({ Booking: class {} }));
 rstest.mock('../entities/location.entity', () => ({ Location: class {} }));
 rstest.mock('../entities/resource.entity', () => ({ Resource: class {} }));
-rstest.mock('../entities/organization-host.entity', () => ({ OrganizationHost: class {} }));
+rstest.mock('../entities/organization-host.entity', () => ({
+  OrganizationHost: class {},
+}));
 
 import { UsersService } from './users.service';
 

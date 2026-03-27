@@ -1,19 +1,20 @@
 import { describe, it, expect, rstest } from '@rstest/core';
-import {
-  UnauthorizedException,
-  BadRequestException,
-} from '@nestjs/common';
+import { UnauthorizedException, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from '../common/enums/user-role.enum';
 import type { User } from '../entities/user.entity';
 import type { OrganizationHost } from '../entities/organization-host.entity';
 
-rstest.mock('../entities/organization.entity', () => ({ Organization: class {} }));
+rstest.mock('../entities/organization.entity', () => ({
+  Organization: class {},
+}));
 rstest.mock('../entities/user.entity', () => ({ User: class {} }));
 rstest.mock('../entities/booking.entity', () => ({ Booking: class {} }));
 rstest.mock('../entities/location.entity', () => ({ Location: class {} }));
 rstest.mock('../entities/resource.entity', () => ({ Resource: class {} }));
-rstest.mock('../entities/organization-host.entity', () => ({ OrganizationHost: class {} }));
+rstest.mock('../entities/organization-host.entity', () => ({
+  OrganizationHost: class {},
+}));
 
 import { AuthService } from './auth.service';
 

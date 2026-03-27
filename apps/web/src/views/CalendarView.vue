@@ -662,8 +662,8 @@ watch(resourceId, () => {
       v-model:open="cancelConfirmOpen"
       title="Отменить бронирование?"
       :description="cancelDescription"
-      confirmText="Отменить"
-      cancelText="Назад"
+      confirm-text="Отменить"
+      cancel-text="Назад"
       destructive
       @confirm="confirmCancel"
       @cancel="() => { cancelConfirmOpen = false; pendingCancel = null; }"

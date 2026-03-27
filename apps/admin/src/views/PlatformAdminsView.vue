@@ -76,7 +76,9 @@ async function submitPlatformAdmin() {
     <section
       class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm"
     >
-      <h2 class="mb-4 text-lg font-semibold">Админы платформы</h2>
+      <h2 class="mb-4 text-lg font-semibold">
+        Админы платформы
+      </h2>
       <form
         class="grid gap-3 md:grid-cols-3"
         @submit.prevent="submitPlatformAdmin"

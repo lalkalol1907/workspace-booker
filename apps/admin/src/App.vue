@@ -13,7 +13,10 @@ function logout() {
 
 <template>
   <div class="min-h-screen bg-slate-100/70">
-    <Toaster rich-colors position="top-center" />
+    <Toaster
+      rich-colors
+      position="top-center"
+    />
     <div
       v-if="auth.isAuthenticated"
       class="mx-auto flex min-h-screen w-full max-w-[1400px]"
@@ -79,4 +82,4 @@ function logout() {
       <RouterView />
     </main>
   </div>
- </template>
+</template>

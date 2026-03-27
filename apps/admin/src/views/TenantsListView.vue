@@ -166,7 +166,9 @@ async function submitCreate() {
       class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm"
     >
       <div class="mb-3 flex items-center justify-between">
-        <h2 class="text-lg font-semibold">Список</h2>
+        <h2 class="text-lg font-semibold">
+          Список
+        </h2>
         <div class="flex items-center gap-2">
           <button
             type="button"
@@ -251,7 +253,9 @@ async function submitCreate() {
       @click.self="closeCreate"
     >
       <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-lg">
-        <h3 class="mb-4 text-lg font-semibold">Создать организацию</h3>
+        <h3 class="mb-4 text-lg font-semibold">
+          Создать организацию
+        </h3>
         <form
           class="space-y-4"
           @submit.prevent="submitCreate"
@@ -334,7 +338,9 @@ async function submitCreate() {
       @click.self="editOpen = false"
     >
       <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-lg">
-        <h3 class="mb-4 text-lg font-semibold">Редактировать организацию</h3>
+        <h3 class="mb-4 text-lg font-semibold">
+          Редактировать организацию
+        </h3>
         <form
           class="space-y-4"
           @submit.prevent="submitEdit"

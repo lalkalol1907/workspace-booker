@@ -10,7 +10,7 @@ import { useThemeStore } from './stores/theme';
 import 'vue-sonner/style.css';
 import './style.css';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+ 
 registerSW({ immediate: true });
 
 async function main() {

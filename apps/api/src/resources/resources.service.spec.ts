@@ -4,12 +4,16 @@ import { ResourceType } from '../common/enums/resource-type.enum';
 import type { Resource } from '../entities/resource.entity';
 import type { Location } from '../entities/location.entity';
 
-rstest.mock('../entities/organization.entity', () => ({ Organization: class {} }));
+rstest.mock('../entities/organization.entity', () => ({
+  Organization: class {},
+}));
 rstest.mock('../entities/user.entity', () => ({ User: class {} }));
 rstest.mock('../entities/booking.entity', () => ({ Booking: class {} }));
 rstest.mock('../entities/location.entity', () => ({ Location: class {} }));
 rstest.mock('../entities/resource.entity', () => ({ Resource: class {} }));
-rstest.mock('../entities/organization-host.entity', () => ({ OrganizationHost: class {} }));
+rstest.mock('../entities/organization-host.entity', () => ({
+  OrganizationHost: class {},
+}));
 
 import { ResourcesService } from './resources.service';
 

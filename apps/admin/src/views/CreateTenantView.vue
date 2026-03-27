@@ -79,7 +79,9 @@ async function submitCreate() {
     <section
       class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm"
     >
-      <h2 class="mb-4 text-lg font-semibold">Создать организацию</h2>
+      <h2 class="mb-4 text-lg font-semibold">
+        Создать организацию
+      </h2>
       <form
         class="grid gap-4 md:grid-cols-2"
         @submit.prevent="submitCreate"

@@ -97,8 +97,8 @@ onUnmounted(() => {
       leave-to-class="translate-y-full opacity-0"
     >
       <div
-        id="mobile-account-sheet"
         v-if="sheetOpen"
+        id="mobile-account-sheet"
         class="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border border-border/70 bg-background/90 px-4 pt-4 pb-[max(1rem,calc(4.5rem+env(safe-area-inset-bottom)))] shadow-2xl backdrop-blur-xl"
         role="dialog"
         aria-modal="true"
