@@ -25,7 +25,7 @@ describe('copyTextToClipboard', () => {
       writable: true,
       configurable: true,
     });
-    const appendChild = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
+    vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
     const removeChild = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
     document.execCommand = vi.fn().mockReturnValue(true);
 
