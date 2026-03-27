@@ -14,6 +14,7 @@ export default tseslint.config(
       '**/coverage/**',
       '**/dist-ssr/**',
       '**/.pnpm-store/**',
+      '**/*.spec.ts',
       'pnpm-lock.yaml',
     ],
   },

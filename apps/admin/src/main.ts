@@ -8,10 +8,12 @@ import 'vue-sonner/style.css';
 import './style.css';
 
 async function main() {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const app = createApp(App);
   const pinia = createPinia();
   app.use(pinia);
   app.use(router);
+  // eslint-disable-next-line vue/multi-word-component-names
   app.component('Toaster', Toaster);
 
   const auth = useAuthStore();

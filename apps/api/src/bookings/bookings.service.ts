@@ -7,7 +7,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BookingStatus } from '../common/enums/booking-status.enum';
-import { UserRole } from '../common/enums/user-role.enum';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { isTenantAdmin } from '../common/utils/tenant-admin';
 import { Booking } from '../entities/booking.entity';
