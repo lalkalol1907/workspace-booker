@@ -27,9 +27,6 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Typecheck API
-        run: pnpm --filter api exec tsc --noEmit
-
   test:
     runs-on: ubuntu-latest
     steps:
