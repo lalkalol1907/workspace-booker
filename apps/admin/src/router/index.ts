@@ -26,6 +26,10 @@ const router = createRouter({
       component: () => import('@/views/PlatformAdminsView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/',
+    },
   ],
 });
 
