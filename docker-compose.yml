@@ -53,6 +53,13 @@ services:
 
   redis:
     image: redis:7-alpine
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --save 60 1000
+    volumes:
+      - ./redisdata:/data
     networks:
       - booker-network
     ports:
