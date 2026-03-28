@@ -10,7 +10,7 @@
 apps/
 ├── api/       NestJS REST API (Fastify, TypeORM, PostgreSQL)
 ├── web/       Vue 3 SPA — интерфейс сотрудников и админов организации
-├── admin/     Vue 3 SPA — интерфейс платформенных администраторов
+├── admin/     Angular 19 SPA — интерфейс платформенных администраторов
 └── worker/    NestJS Worker — обработка очередей и email-уведомления
 ```
 
@@ -22,7 +22,7 @@ apps/
 |------------|------------|
 | pnpm (workspaces) | Пакеты и зависимости между `apps/*` |
 | TypeScript 5.9+ (web/admin), 5.7+ (api/worker) | Язык |
-| ESLint 9 + typescript-eslint + eslint-plugin-vue | Линтинг |
+| ESLint 9 + typescript-eslint + eslint-plugin-vue (web) + angular-eslint (admin) | Линтинг |
 | Prettier | Форматирование (через ESLint) |
 
 **API (`apps/api`)**
@@ -72,8 +72,11 @@ apps/
 
 | Технология | Назначение |
 |------------|------------|
-| Vue 3, Vite, Pinia, Tailwind 4, Reka UI | Как у web, без FullCalendar и PWA |
-| Vitest, Vue Test Utils, happy-dom, `@pinia/testing` | Тесты |
+| Angular 19, Angular Router | SPA |
+| `@angular-devkit/build-angular` (esbuild) | Сборка и dev-сервер (`ng serve`) |
+| Reactive Forms, HttpClient, interceptors | Формы и API (`/api` через proxy в dev) |
+| Tailwind CSS 4, `@tailwindcss/postcss`, `.postcssrc.json` | Стили (глобальный `styles.css`) |
+| Karma, Jasmine, `karma-coverage` | Unit-тесты (`ng test`, `ng test --code-coverage`) |
 
 **Инфраструктура**
 
@@ -89,9 +92,10 @@ apps/
 | Технология | Назначение |
 |------------|------------|
 | Rstest (`@rstest/core`, покрытие Istanbul) | Unit-тесты `api` и `worker` |
-| Vitest + v8 coverage | Unit-тесты `web` и `admin` |
-| Vue Test Utils | Монтирование компонентов и composables |
-| happy-dom | DOM в тестах фронтенда |
+| Vitest + v8 coverage | Unit-тесты `web` |
+| Karma + Jasmine + `karma-coverage` | Unit-тесты `admin` |
+| Vue Test Utils | Монтирование компонентов `web` |
+| happy-dom | DOM в тестах `web` |
 
 ## Функциональность
 
@@ -154,8 +158,8 @@ pnpm --filter api run start:dev
 # Web
 pnpm --filter web run dev
 
-# Admin
-pnpm --filter admin run dev
+# Admin (прокси `/api` → `http://localhost:3000`, см. `apps/admin/proxy.conf.json`)
+pnpm --filter admin run start
 
 # Worker (сначала соберите API — worker подключает скомпилированные сущности из пакета `api`)
 pnpm --filter api run build
@@ -174,6 +178,8 @@ pnpm test:cov
 # Отдельное приложение
 pnpm --filter api run test
 pnpm --filter web run test
+pnpm --filter admin run test
+pnpm --filter admin run test:cov
 ```
 
 ### Линтинг

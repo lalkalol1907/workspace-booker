@@ -1,0 +1,59 @@
+<div class="mx-auto flex min-h-screen w-full max-w-[1400px]">
+  <aside
+    class="sticky top-0 hidden h-screen w-64 shrink-0 overflow-hidden border-r border-slate-300 bg-white p-4 lg:block"
+  >
+    <div class="mb-6 border-b border-slate-200 pb-4">
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500">
+        Platform Console
+      </p>
+      <p class="mt-1 text-sm font-semibold text-slate-900">
+        Workspace Booker
+      </p>
+    </div>
+    <nav class="space-y-1">
+      <a
+        routerLink="/tenants/platform-admins"
+        routerLinkActive="border-slate-300 bg-slate-50"
+        class="block rounded-md border border-transparent px-3 py-2 text-sm text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+      >
+        Админы платформы
+      </a>
+      <a
+        routerLink="/tenants"
+        [routerLinkActiveOptions]="{ exact: true }"
+        routerLinkActive="border-slate-300 bg-slate-50"
+        class="block rounded-md border border-transparent px-3 py-2 text-sm text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+      >
+        Список тенантов
+      </a>
+    </nav>
+  </aside>
+
+  <div class="min-w-0 flex-1">
+    <header class="border-b border-slate-300 bg-white">
+      <div class="flex items-center justify-between px-4 py-3 lg:px-6">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-slate-500">
+            Административная панель
+          </p>
+          <p class="text-sm font-semibold text-slate-900">
+            Управление платформой
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-slate-600">{{ auth.user()?.email }}</span>
+          <button
+            type="button"
+            class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+            (click)="logout()"
+          >
+            Выйти
+          </button>
+        </div>
+      </div>
+    </header>
+    <main class="px-4 py-6 lg:px-6">
+      <router-outlet />
+    </main>
+  </div>
+</div>

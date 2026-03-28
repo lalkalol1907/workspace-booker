@@ -54,6 +54,6 @@ COPY docker/nginx-web.conf.template /etc/nginx/default.conf.template
 COPY docker/web-entrypoint.sh /web-entrypoint.sh
 RUN chmod +x /web-entrypoint.sh
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
-COPY --from=builder /app/apps/admin/dist /usr/share/nginx/admin
+COPY --from=builder /app/apps/admin/dist/admin/browser /usr/share/nginx/admin
 EXPOSE 80
 ENTRYPOINT ["/web-entrypoint.sh"]

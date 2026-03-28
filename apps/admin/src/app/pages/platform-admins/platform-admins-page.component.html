@@ -1,0 +1,61 @@
+<div class="space-y-6">
+  <section class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm">
+    <h2 class="mb-4 text-lg font-semibold text-slate-900">
+      Админы платформы
+    </h2>
+    <form
+      class="grid gap-3 md:grid-cols-3"
+      (ngSubmit)="submitPlatformAdmin()"
+    >
+      <input
+        [(ngModel)]="adminEmail"
+        name="adminEmail"
+        type="email"
+        placeholder="email"
+        required
+        class="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none ring-slate-200 focus:ring"
+      >
+      <input
+        [(ngModel)]="adminDisplayName"
+        name="adminDisplayName"
+        placeholder="Имя (необязательно)"
+        class="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none ring-slate-200 focus:ring"
+      >
+      <div>
+        <button
+          type="submit"
+          class="rounded-md border border-slate-900 bg-slate-900 px-4 py-2 text-white hover:bg-black disabled:opacity-60"
+          [disabled]="adminSaving"
+        >
+          {{ adminSaving ? 'Сохранение...' : 'Добавить / повысить' }}
+        </button>
+      </div>
+    </form>
+    @if (adminResult?.temporaryPassword) {
+      <p class="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        Временный пароль (только при создании):
+        <code class="font-mono font-semibold">{{ adminResult!.temporaryPassword }}</code>
+      </p>
+    }
+  </section>
+
+  <section class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm">
+    <h3 class="mb-3 text-base font-semibold text-slate-900">
+      Список
+    </h3>
+    @if (adminsLoading) {
+      <p class="text-sm text-slate-500">Загрузка…</p>
+    } @else if (!admins.length) {
+      <p class="text-sm text-slate-500">Нет записей</p>
+    } @else {
+      <ul class="divide-y divide-slate-100">
+        @for (a of admins; track a.id) {
+          <li class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+            <span class="font-medium text-slate-900">{{ a.email }}</span>
+            <span class="text-slate-600">{{ a.displayName }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>

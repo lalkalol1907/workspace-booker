@@ -1,0 +1,23 @@
+<router-outlet />
+@if (toast.text(); as msg) {
+  <div
+    class="fixed right-4 top-4 z-[100] flex max-w-sm items-start gap-2 rounded-lg border px-4 py-3 text-sm shadow-lg"
+    [ngClass]="{
+      'border-red-200 bg-red-50 text-red-900': toast.kind() === 'error',
+      'border-emerald-200 bg-emerald-50 text-emerald-900':
+        toast.kind() === 'success',
+      'border-slate-200 bg-white text-slate-900': toast.kind() === 'info',
+    }"
+    role="status"
+  >
+    <span class="flex-1">{{ msg }}</span>
+    <button
+      type="button"
+      class="shrink-0 rounded p-0.5 hover:bg-black/5"
+      aria-label="Закрыть"
+      (click)="toast.clear()"
+    >
+      ×
+    </button>
+  </div>
+}
