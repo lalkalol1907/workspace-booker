@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue-sonner';
+import { apiErrorMessage } from '@/api/error-messages';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
@@ -21,8 +22,8 @@ async function submit() {
     });
     const redirect = route.query.redirect as string | undefined;
     await router.push(redirect || '/tenants');
-  } catch {
-    toast.error('Неверные данные или нет доступа platform admin');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Неверные данные или нет доступа platform admin'));
   } finally {
     loading.value = false;
   }

@@ -1,9 +1,4 @@
 import { describe, it, expect, rstest } from '@rstest/core';
-import {
-  ConflictException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
 import { UserRole } from '../common/enums/user-role.enum';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import type { User } from '../entities/user.entity';
@@ -99,7 +94,7 @@ describe('UsersService', () => {
 
       await expect(
         service.invite(adminPayload, ORG_ID, { email: 'existing@test.com' }),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toMatchObject({ response: { errorCode: 'USER_ALREADY_EXISTS' } });
     });
   });
 
@@ -119,7 +114,7 @@ describe('UsersService', () => {
 
       await expect(
         service.remove(adminPayload, ORG_ID, 'missing'),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toMatchObject({ response: { errorCode: 'USER_NOT_FOUND' } });
     });
 
     it('throws ForbiddenException when deleting self', async () => {
@@ -128,7 +123,7 @@ describe('UsersService', () => {
 
       await expect(
         service.remove(adminPayload, ORG_ID, 'admin-1'),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'CANNOT_MODIFY_SELF' } });
     });
 
     it('non-super-admin cannot delete admin', async () => {
@@ -139,7 +134,7 @@ describe('UsersService', () => {
 
       await expect(
         service.remove(adminPayload, ORG_ID, 'other-admin'),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'INSUFFICIENT_ROLE' } });
     });
   });
 
@@ -166,7 +161,7 @@ describe('UsersService', () => {
 
       await expect(
         service.resetPassword(adminPayload, ORG_ID, 'admin-1'),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'CANNOT_MODIFY_SELF' } });
     });
   });
 
@@ -189,7 +184,7 @@ describe('UsersService', () => {
         service.updateRole(adminPayload, ORG_ID, 'user-1', {
           role: UserRole.ADMIN,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'INSUFFICIENT_ROLE' } });
     });
 
     it('cannot change own role', async () => {
@@ -202,7 +197,7 @@ describe('UsersService', () => {
         service.updateRole(superAdminPayload, ORG_ID, 'sa-1', {
           role: UserRole.ADMIN,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'CANNOT_MODIFY_SELF' } });
     });
 
     it('cannot change SUPER_ADMIN role', async () => {
@@ -215,7 +210,7 @@ describe('UsersService', () => {
         service.updateRole(superAdminPayload, ORG_ID, 'other-sa', {
           role: UserRole.MEMBER,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'INSUFFICIENT_ROLE' } });
     });
   });
 });

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { ApiError, http } from '@/api/http';
+import { apiErrorMessage } from '@/api/error-messages';
+import { http } from '@/api/http';
 import type {
   PlatformAdminSummary,
   PlatformAdminUpsertResult,
@@ -18,8 +19,8 @@ async function loadAdmins() {
   adminsLoading.value = true;
   try {
     admins.value = await http<PlatformAdminSummary[]>('/platform/admins');
-  } catch {
-    toast.error('Не удалось загрузить админов платформы');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось загрузить админов платформы'));
   } finally {
     adminsLoading.value = false;
   }
@@ -58,13 +59,7 @@ async function submitPlatformAdmin() {
     }
     await loadAdmins();
   } catch (e: unknown) {
-    if (e instanceof ApiError && e.status === 409) {
-      toast.error('Найдено несколько пользователей с таким email');
-    } else if (e instanceof ApiError && e.status === 400) {
-      toast.error(e.message || 'Некорректные данные');
-    } else {
-      toast.error('Не удалось назначить админа платформы');
-    }
+    toast.error(apiErrorMessage(e, 'Не удалось назначить админа платформы'));
   } finally {
     adminSaving.value = false;
   }

@@ -15,6 +15,8 @@ export default tseslint.config(
       '**/dist-ssr/**',
       '**/.pnpm-store/**',
       '**/*.spec.ts',
+      '**/test-setup.ts',
+      '**/vitest.config.ts',
       'pnpm-lock.yaml',
     ],
   },

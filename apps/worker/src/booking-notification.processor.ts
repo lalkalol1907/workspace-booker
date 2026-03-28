@@ -1,15 +1,29 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Job } from 'bullmq';
 import { Repository } from 'typeorm';
 import { Booking } from 'api/entities/booking.entity';
 import { BookingStatus } from 'api/common/enums/booking-status.enum';
+import type { MailerConfig } from './config/mailer.config';
+import {
+  bookingMailSubject,
+  buildBookingMailViewModel,
+  renderBookingMail,
+  type BookingMailKind,
+} from './mail/render-booking-mail';
 
 interface BookingJobData {
   bookingId: string;
 }
+
+const JOB_TO_KIND: Record<string, BookingMailKind | undefined> = {
+  created: 'created',
+  reminder: 'reminder',
+  cancelled: 'cancelled',
+};
 
 @Processor('booking-notifications')
 export class BookingNotificationProcessor extends WorkerHost {
@@ -19,6 +33,7 @@ export class BookingNotificationProcessor extends WorkerHost {
     @InjectRepository(Booking)
     private readonly bookingRepo: Repository<Booking>,
     private readonly mailer: MailerService,
+    private readonly config: ConfigService,
   ) {
     super();
   }
@@ -48,6 +63,13 @@ export class BookingNotificationProcessor extends WorkerHost {
       return;
     }
 
+    const kind = JOB_TO_KIND[job.name];
+    if (!kind) {
+      this.logger.warn(`Unknown job name: ${job.name}`);
+      return;
+    }
+
+    const mail = this.config.getOrThrow<MailerConfig>('mailer');
     const resourceName = booking.resource?.name ?? 'Ресурс';
     const startsAt = booking.startsAt.toLocaleString('ru-RU', {
       timeZone: 'Europe/Moscow',
@@ -56,52 +78,22 @@ export class BookingNotificationProcessor extends WorkerHost {
       timeZone: 'Europe/Moscow',
     });
 
-    const templates: Record<string, { subject: string; text: string }> = {
-      created: {
-        subject: 'Бронирование подтверждено',
-        text: [
-          `Ваше бронирование подтверждено.`,
-          ``,
-          `Ресурс: ${resourceName}`,
-          `Название: ${booking.title}`,
-          `Начало: ${startsAt}`,
-          `Конец: ${endsAt}`,
-        ].join('\n'),
-      },
-      reminder: {
-        subject: 'Напоминание: бронирование через 15 минут',
-        text: [
-          `Через 15 минут начнётся ваше бронирование.`,
-          ``,
-          `Ресурс: ${resourceName}`,
-          `Название: ${booking.title}`,
-          `Начало: ${startsAt}`,
-          `Конец: ${endsAt}`,
-        ].join('\n'),
-      },
-      cancelled: {
-        subject: 'Бронирование отменено',
-        text: [
-          `Ваше бронирование было отменено.`,
-          ``,
-          `Ресурс: ${resourceName}`,
-          `Название: ${booking.title}`,
-          `Начало: ${startsAt}`,
-          `Конец: ${endsAt}`,
-        ].join('\n'),
-      },
-    };
+    const viewModel = buildBookingMailViewModel(kind, {
+      appName: mail.appName,
+      userName: booking.user?.displayName?.trim() || 'Участник',
+      resourceName,
+      title: booking.title,
+      startsAt,
+      endsAt,
+    });
 
-    const tpl = templates[job.name];
-    if (!tpl) {
-      this.logger.warn(`Unknown job name: ${job.name}`);
-      return;
-    }
+    const { html, text } = await renderBookingMail(kind, viewModel);
 
     await this.mailer.sendMail({
       to: userEmail,
-      subject: tpl.subject,
-      text: tpl.text,
+      subject: bookingMailSubject(kind),
+      html,
+      text,
     });
 
     this.logger.log(

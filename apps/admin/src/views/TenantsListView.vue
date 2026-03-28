@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { ApiError, http } from '@/api/http';
+import { apiErrorMessage } from '@/api/error-messages';
+import { http } from '@/api/http';
 import type { OrganizationSummary } from '@/api/types';
 
 const rows = ref<OrganizationSummary[]>([]);
@@ -39,8 +40,8 @@ async function loadOrganizations() {
   loading.value = true;
   try {
     rows.value = await http<OrganizationSummary[]>('/platform/organizations');
-  } catch {
-    toast.error('Не удалось загрузить организации');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось загрузить организации'));
   } finally {
     loading.value = false;
   }
@@ -115,13 +116,7 @@ async function submitEdit() {
     toast.success('Организация обновлена');
     await loadOrganizations();
   } catch (e: unknown) {
-    if (e instanceof ApiError && e.status === 409) {
-      toast.error('Slug или один из доменов уже заняты');
-    } else if (e instanceof ApiError && e.status === 400) {
-      toast.error(e.message || 'Некорректные данные организации');
-    } else {
-      toast.error('Не удалось обновить организацию');
-    }
+    toast.error(apiErrorMessage(e, 'Не удалось обновить организацию'));
   } finally {
     updatingId.value = null;
   }
@@ -147,13 +142,7 @@ async function submitCreate() {
     closeCreate();
     await loadOrganizations();
   } catch (e: unknown) {
-    if (e instanceof ApiError && e.status === 409) {
-      toast.error('Slug или один из доменов уже заняты');
-    } else if (e instanceof ApiError && e.status === 400) {
-      toast.error(e.message || 'Некорректные данные организации');
-    } else {
-      toast.error('Не удалось создать организацию');
-    }
+    toast.error(apiErrorMessage(e, 'Не удалось создать организацию'));
   } finally {
     creating.value = false;
   }

@@ -1,9 +1,4 @@
 import { describe, it, expect, rstest } from '@rstest/core';
-import {
-  ConflictException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
 import { BookingStatus } from '../common/enums/booking-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
@@ -139,7 +134,7 @@ describe('BookingsService', () => {
           endsAt: new Date('2025-01-01T11:00:00Z'),
           title: 'Test',
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'RESOURCE_NOT_AVAILABLE' } });
     });
 
     it('rejects when endsAt <= startsAt', async () => {
@@ -154,7 +149,7 @@ describe('BookingsService', () => {
           endsAt: t,
           title: 'Bad',
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'VALIDATION_ERROR' } });
     });
 
     it('rejects when duration exceeds maxBookingMinutes', async () => {
@@ -170,7 +165,7 @@ describe('BookingsService', () => {
           endsAt: new Date('2025-01-01T11:00:00Z'),
           title: 'Too long',
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'BOOKING_DURATION_EXCEEDED' } });
     });
 
     it('rejects overlapping bookings', async () => {
@@ -185,7 +180,7 @@ describe('BookingsService', () => {
           endsAt: new Date('2025-01-01T10:30:00Z'),
           title: 'Overlap',
         }),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toMatchObject({ response: { errorCode: 'BOOKING_CONFLICT' } });
     });
   });
 
@@ -204,7 +199,7 @@ describe('BookingsService', () => {
 
       await expect(
         service.findOne(memberPayload, ORG_ID, 'missing'),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toMatchObject({ response: { errorCode: 'BOOKING_NOT_FOUND' } });
     });
 
     it('throws ForbiddenException for non-owner non-admin', async () => {
@@ -215,7 +210,7 @@ describe('BookingsService', () => {
 
       await expect(
         service.findOne(memberPayload, ORG_ID, 'b-1'),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'BOOKING_FORBIDDEN' } });
     });
 
     it('allows admin to view any booking', async () => {
@@ -254,7 +249,7 @@ describe('BookingsService', () => {
         service.update(memberPayload, ORG_ID, 'b-1', {
           status: BookingStatus.CANCELLED,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'BOOKING_FORBIDDEN' } });
     });
   });
 
@@ -276,7 +271,7 @@ describe('BookingsService', () => {
 
       await expect(
         service.remove(memberPayload, ORG_ID, 'missing'),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toMatchObject({ response: { errorCode: 'BOOKING_NOT_FOUND' } });
     });
   });
 });

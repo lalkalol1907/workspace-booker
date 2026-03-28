@@ -6,6 +6,8 @@ export interface MailerConfig {
   user: string;
   pass: string;
   from: string;
+  /** Отображаемое имя приложения в шапке писем */
+  appName: string;
 }
 
 export const mailerConfig = registerAs(
@@ -16,5 +18,6 @@ export const mailerConfig = registerAs(
     user: process.env.SMTP_USER ?? '',
     pass: process.env.SMTP_PASS ?? '',
     from: process.env.SMTP_FROM ?? '"Workspace Booker" <noreply@example.com>',
+    appName: process.env.MAIL_APP_NAME ?? 'Бронирование рабочих мест',
   }),
 );

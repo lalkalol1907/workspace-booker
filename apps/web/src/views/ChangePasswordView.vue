@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue-sonner';
+import { apiErrorMessage } from '@/api/error-messages';
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
@@ -38,8 +39,8 @@ async function submit() {
     toast.success('Пароль обновлён');
     const redirect = route.query.redirect as string | undefined;
     await router.replace(redirect || '/calendar');
-  } catch {
-    toast.error('Не удалось сменить пароль (проверьте текущий пароль)');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось сменить пароль. Попробуйте ещё раз.'));
   } finally {
     loading.value = false;
   }

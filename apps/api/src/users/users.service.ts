@@ -1,14 +1,11 @@
-import {
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { Repository } from 'typeorm';
+import { ErrorCode } from '../common/enums/error-code.enum';
 import { UserRole } from '../common/enums/user-role.enum';
+import { AppException } from '../common/exceptions/app.exception';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { User } from '../entities/user.entity';
 import { InviteUserDto } from './dto/invite-user.dto';
@@ -49,13 +46,16 @@ export class UsersService {
       where: { id, organizationId },
     });
     if (!target) {
-      throw new NotFoundException();
+      throw new AppException(ErrorCode.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
     if (target.id === admin.sub) {
-      throw new ForbiddenException();
+      throw new AppException(
+        ErrorCode.CANNOT_MODIFY_SELF,
+        HttpStatus.FORBIDDEN,
+      );
     }
     if (target.role === UserRole.ADMIN && admin.role !== UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException();
+      throw new AppException(ErrorCode.INSUFFICIENT_ROLE, HttpStatus.FORBIDDEN);
     }
     await this.userRepo.remove(target);
   }
@@ -70,7 +70,10 @@ export class UsersService {
       where: { organizationId, email },
     });
     if (exists) {
-      throw new ConflictException();
+      throw new AppException(
+        ErrorCode.USER_ALREADY_EXISTS,
+        HttpStatus.CONFLICT,
+      );
     }
     const tempPlain = generateTemporaryPassword();
     const passwordHash = await bcrypt.hash(tempPlain, 10);
@@ -101,13 +104,16 @@ export class UsersService {
       where: { id: userId, organizationId },
     });
     if (!target) {
-      throw new NotFoundException();
+      throw new AppException(ErrorCode.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
     if (target.id === admin.sub) {
-      throw new ForbiddenException();
+      throw new AppException(
+        ErrorCode.CANNOT_MODIFY_SELF,
+        HttpStatus.FORBIDDEN,
+      );
     }
     if (target.role === UserRole.ADMIN && admin.role !== UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException();
+      throw new AppException(ErrorCode.INSUFFICIENT_ROLE, HttpStatus.FORBIDDEN);
     }
     const tempPlain = generateTemporaryPassword();
     target.passwordHash = await bcrypt.hash(tempPlain, 10);
@@ -129,19 +135,22 @@ export class UsersService {
     dto: UpdateUserRoleDto,
   ): Promise<void> {
     if (actor.role !== UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException();
+      throw new AppException(ErrorCode.INSUFFICIENT_ROLE, HttpStatus.FORBIDDEN);
     }
     const target = await this.userRepo.findOne({
       where: { id: userId, organizationId },
     });
     if (!target) {
-      throw new NotFoundException();
+      throw new AppException(ErrorCode.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
     if (target.role === UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException();
+      throw new AppException(ErrorCode.INSUFFICIENT_ROLE, HttpStatus.FORBIDDEN);
     }
     if (target.id === actor.sub) {
-      throw new ForbiddenException();
+      throw new AppException(
+        ErrorCode.CANNOT_MODIFY_SELF,
+        HttpStatus.FORBIDDEN,
+      );
     }
     target.role = dto.role;
     await this.userRepo.save(target);

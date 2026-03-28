@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import { apiErrorMessage } from '@/api/error-messages';
 import LoadingOverlay from '@/components/ui/loading-overlay/LoadingOverlay.vue';
 import Table from '@/components/ui/table/Table.vue';
 import TableBody from '@/components/ui/table/TableBody.vue';
@@ -19,8 +20,8 @@ onMounted(async () => {
   loading.value = true;
   try {
     rows.value = await http<ResourceDto[]>('/resources');
-  } catch {
-    toast.error('Не удалось загрузить ресурсы');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось загрузить ресурсы'));
   } finally {
     loading.value = false;
   }

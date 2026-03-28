@@ -1,10 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Repository } from 'typeorm';
+import { ErrorCode } from '../common/enums/error-code.enum';
 import { UserRole } from '../common/enums/user-role.enum';
+import { AppException } from '../common/exceptions/app.exception';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { User } from '../entities/user.entity';
 
@@ -39,7 +41,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       select: ['id', 'tokenVersion'],
     });
     if (!user || user.tokenVersion !== payload.tokenVersion) {
-      throw new UnauthorizedException();
+      throw new AppException(ErrorCode.TOKEN_INVALID, HttpStatus.UNAUTHORIZED);
     }
 
     return payload;

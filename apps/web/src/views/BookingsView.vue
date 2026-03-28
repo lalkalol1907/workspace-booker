@@ -2,6 +2,7 @@
 import { Trash2 } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import { apiErrorMessage } from '@/api/error-messages';
 import Button from '@/components/ui/button/Button.vue';
 import LoadingOverlay from '@/components/ui/loading-overlay/LoadingOverlay.vue';
 import Table from '@/components/ui/table/Table.vue';
@@ -21,8 +22,8 @@ onMounted(async () => {
   loading.value = true;
   try {
     rows.value = await http<BookingDto[]>('/bookings?mine=true');
-  } catch {
-    toast.error('Не удалось загрузить брони');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось загрузить список бронирований'));
   } finally {
     loading.value = false;
   }
@@ -33,8 +34,8 @@ async function cancelRow(id: string) {
     await http(`/bookings/${id}`, { method: 'DELETE' });
     rows.value = rows.value.filter((b) => b.id !== id);
     toast.success('Бронь отменена');
-  } catch {
-    toast.error('Не удалось отменить');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось отменить бронь'));
   }
 }
 </script>

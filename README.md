@@ -16,48 +16,79 @@ apps/
 
 ### Стек технологий
 
-**Backend**
+**Монорепозиторий**
 
 | Технология | Назначение |
 |------------|------------|
-| TypeScript | Язык |
-| NestJS + Fastify | HTTP-фреймворк |
-| TypeORM | ORM, миграции |
-| PostgreSQL | База данных |
-| Redis + BullMQ | Очередь задач (уведомления, напоминания) |
-| Nodemailer | Отправка email |
-| JWT (Passport) | Аутентификация с версионированием токенов |
-| Swagger | API-документация (`/api/docs`) |
+| pnpm (workspaces) | Пакеты и зависимости между `apps/*` |
+| TypeScript 5.9+ (web/admin), 5.7+ (api/worker) | Язык |
+| ESLint 9 + typescript-eslint + eslint-plugin-vue | Линтинг |
+| Prettier | Форматирование (через ESLint) |
 
-**Frontend**
+**API (`apps/api`)**
 
 | Технология | Назначение |
 |------------|------------|
-| Vue 3 (Composition API) | UI-фреймворк |
-| Vite | Сборка |
-| Pinia | State management |
-| Tailwind CSS 4 | Стилизация |
-| FullCalendar | Календарь бронирований |
-| Reka UI | UI-компоненты |
-| Lucide | Иконки |
-| PWA (Workbox) | Оффлайн-поддержка (web) |
+| NestJS 11 | Модульный бэкенд |
+| Fastify 5 | HTTP-адаптер |
+| TypeORM | ORM, сущности PostgreSQL |
+| class-validator / class-transformer | DTO и валидация |
+| Passport JWT | Аутентификация |
+| bcrypt | Хэширование паролей |
+| `@nestjs/jwt`, `@nestjs/swagger` | JWT и OpenAPI (Swagger UI на `/api/docs`) |
+| `@nestjs/bullmq`, BullMQ, ioredis | Постановка задач в Redis |
+| `package.json` `exports` | Публичные пути к сущностям и enum для воркера |
+
+**Worker (`apps/worker`)**
+
+| Технология | Назначение |
+|------------|------------|
+| NestJS (application context) | Точка входа без HTTP |
+| TypeORM | Те же сущности, что у API (workspace-зависимость `api`) |
+| BullMQ | Потребление очереди `booking-notifications` |
+| `@nestjs-modules/mailer`, Nodemailer | Отправка писем по SMTP |
+| EJS | HTML- и текстовые шаблоны писем |
+| Зависимость `api` | Типы сущностей и enum без дублирования модели |
+
+**Web (`apps/web`)**
+
+| Технология | Назначение |
+|------------|------------|
+| Vue 3, Vue Router 5 | SPA |
+| Vite 8 | Сборка и dev-сервер |
+| Pinia | Состояние |
+| Tailwind CSS 4 + `@tailwindcss/vite` | Стили |
+| FullCalendar 6 + `@fullcalendar/vue3` | Календарь |
+| Reka UI, class-variance-authority, clsx, tailwind-merge | UI и утилиты классов |
+| Lucide Vue | Иконки |
+| vue-sonner | Тосты |
+| vite-plugin-pwa, Workbox | PWA |
+| Vitest 4, Vue Test Utils, happy-dom, `@pinia/testing` | Тесты |
+
+**Admin (`apps/admin`)**
+
+| Технология | Назначение |
+|------------|------------|
+| Vue 3, Vite, Pinia, Tailwind 4, Reka UI | Как у web, без FullCalendar и PWA |
+| Vitest, Vue Test Utils, happy-dom, `@pinia/testing` | Тесты |
 
 **Инфраструктура**
 
 | Технология | Назначение |
 |------------|------------|
-| Docker | Контейнеризация (multi-stage builds) |
-| Docker Compose | Оркестрация сервисов |
-| Nginx | Проксирование API, раздача SPA, SSL |
-| GitHub Actions | CI/CD (тесты, сборка образов) |
+| Docker (multi-stage) | Образы `api`, `web` (nginx + статика), `worker` |
+| Docker Compose | PostgreSQL, Redis, api, web, worker |
+| Nginx (в образе web) | Статика SPA, прокси `/api`, отдельный хост админки |
+| GitHub Actions | `test` (push/PR), `build` (теги `v*`, Docker Hub) |
 
 **Тестирование**
 
 | Технология | Назначение |
 |------------|------------|
-| Rstest | Unit-тесты API и Worker |
-| Vitest | Unit-тесты фронтендов |
-| Vue Test Utils | Тестирование Vue-компонентов и composables |
+| Rstest (`@rstest/core`, покрытие Istanbul) | Unit-тесты `api` и `worker` |
+| Vitest + v8 coverage | Unit-тесты `web` и `admin` |
+| Vue Test Utils | Монтирование компонентов и composables |
+| happy-dom | DOM в тестах фронтенда |
 
 ## Функциональность
 
@@ -66,7 +97,7 @@ apps/
 - **Ресурсы** — рабочие места, переговорки, прочее; лимиты по длительности бронирования
 - **Бронирования** — создание, отмена, проверка пересечений, календарь
 - **Локации** — иерархическая структура помещений
-- **Уведомления** — email при создании, отмене и за 15 минут до начала
+- **Уведомления** — письма (HTML/text, шаблоны EJS) при создании, отмене и за 15 минут до начала
 - **Инвалидация токенов** — версионирование JWT при смене пароля
 - **Платформенная панель** — управление организациями и платформенными администраторами
 
@@ -109,6 +140,7 @@ cp apps/api/.env.example apps/api/.env
 | `SMTP_USER`           | Логин SMTP                                  |                                              |
 | `SMTP_PASS`           | Пароль SMTP                                 |                                              |
 | `SMTP_FROM`           | Адрес отправителя                           | `noreply@example.com`                        |
+| `MAIL_APP_NAME`       | Имя в шапке писем (worker)                  | `Бронирование рабочих мест`                  |
 
 ### Запуск в dev-режиме
 

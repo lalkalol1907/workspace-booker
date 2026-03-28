@@ -14,6 +14,7 @@ import TableCell from '@/components/ui/table/TableCell.vue';
 import TableHead from '@/components/ui/table/TableHead.vue';
 import TableHeader from '@/components/ui/table/TableHeader.vue';
 import TableRow from '@/components/ui/table/TableRow.vue';
+import { apiErrorMessage } from '@/api/error-messages';
 import { http } from '@/api/http';
 import type { LocationDto, ResourceDto, ResourceType } from '@/api/types';
 import { resourceTypeLabel, resourceTypeOptions } from '@/utils/resource-type-label';
@@ -44,8 +45,8 @@ async function load() {
   try {
     rows.value = await http<ResourceDto[]>('/resources');
     locations.value = await http<LocationDto[]>('/locations');
-  } catch {
-    toast.error('Не удалось загрузить данные');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось загрузить данные'));
   } finally {
     loading.value = false;
   }
@@ -112,8 +113,8 @@ async function save() {
     dialog.value = false;
     toast.success('Сохранено');
     await load();
-  } catch {
-    toast.error('Ошибка сохранения');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Ошибка сохранения'));
   }
 }
 
@@ -133,8 +134,8 @@ async function confirmDeactivate() {
     pendingResource.value = null;
     confirmOpen.value = false;
     await load();
-  } catch {
-    toast.error('Ошибка');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось деактивировать ресурс'));
   }
 }
 </script>

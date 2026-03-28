@@ -7,6 +7,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import FullCalendar from '@fullcalendar/vue3';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import { apiErrorMessage } from '@/api/error-messages';
 import Button from '@/components/ui/button/Button.vue';
 import FormDialog from '@/components/ui/dialog/FormDialog.vue';
 import Input from '@/components/ui/input/Input.vue';
@@ -220,8 +221,8 @@ async function loadEvents(info: EventSourceFuncArg): Promise<EventInput[]> {
           ...palette,
         };
       });
-  } catch {
-    toast.error('Не удалось загрузить расписание');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось загрузить расписание'));
     return [];
   } finally {
     loading.value = false;
@@ -289,8 +290,8 @@ async function createBooking() {
     bookingEnd.value = '';
     calendarRef.value?.getApi?.()?.unselect?.();
     refetchCalendar();
-  } catch {
-    toast.error('Не удалось создать бронь (пересечение или ошибка)');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось создать бронь'));
   } finally {
     loading.value = false;
   }
@@ -429,8 +430,8 @@ async function confirmCancel() {
     cancelConfirmOpen.value = false;
     pendingCancel.value = null;
     refetchCalendar();
-  } catch {
-    toast.error('Не удалось отменить бронь');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось отменить бронь'));
   } finally {
     cancelLoading.value = false;
   }
@@ -468,8 +469,8 @@ onMounted(async () => {
     await loadResources();
     await nextTick();
     refetchCalendar();
-  } catch {
-    toast.error('Не удалось загрузить ресурсы');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось загрузить ресурсы'));
   }
 });
 

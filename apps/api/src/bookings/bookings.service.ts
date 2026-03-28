@@ -1,12 +1,9 @@
-import {
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BookingStatus } from '../common/enums/booking-status.enum';
+import { ErrorCode } from '../common/enums/error-code.enum';
+import { AppException } from '../common/exceptions/app.exception';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { isTenantAdmin } from '../common/utils/tenant-admin';
 import { Booking } from '../entities/booking.entity';
@@ -70,10 +67,10 @@ export class BookingsService {
       relations: ['resource', 'user'],
     });
     if (!b) {
-      throw new NotFoundException();
+      throw new AppException(ErrorCode.BOOKING_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
     if (!isTenantAdmin(user) && b.userId !== user.sub) {
-      throw new ForbiddenException();
+      throw new AppException(ErrorCode.BOOKING_FORBIDDEN, HttpStatus.FORBIDDEN);
     }
     return this.toDto(b);
   }
@@ -91,10 +88,16 @@ export class BookingsService {
       },
     });
     if (!res) {
-      throw new ForbiddenException();
+      throw new AppException(
+        ErrorCode.RESOURCE_NOT_AVAILABLE,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
     }
     if (dto.endsAt <= dto.startsAt) {
-      throw new ForbiddenException();
+      throw new AppException(
+        ErrorCode.VALIDATION_ERROR,
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     if (
@@ -102,8 +105,9 @@ export class BookingsService {
       dto.endsAt.getTime() - dto.startsAt.getTime() >
         res.maxBookingMinutes * 60 * 1000
     ) {
-      throw new ForbiddenException(
-        'Превышена максимальная длительность брони для этого ресурса',
+      throw new AppException(
+        ErrorCode.BOOKING_DURATION_EXCEEDED,
+        HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
 
@@ -116,7 +120,7 @@ export class BookingsService {
       .andWhere('b.endsAt > :start', { start: dto.startsAt })
       .getCount();
     if (overlap > 0) {
-      throw new ConflictException();
+      throw new AppException(ErrorCode.BOOKING_CONFLICT, HttpStatus.CONFLICT);
     }
     const b = this.repo.create({
       organizationId,
@@ -147,10 +151,10 @@ export class BookingsService {
       where: { id, organizationId },
     });
     if (!b) {
-      throw new NotFoundException();
+      throw new AppException(ErrorCode.BOOKING_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
     if (!isTenantAdmin(user) && b.userId !== user.sub) {
-      throw new ForbiddenException();
+      throw new AppException(ErrorCode.BOOKING_FORBIDDEN, HttpStatus.FORBIDDEN);
     }
     const wasCancelled = b.status === BookingStatus.CANCELLED;
     if (dto.status !== undefined) {
@@ -176,10 +180,10 @@ export class BookingsService {
       where: { id, organizationId },
     });
     if (!b) {
-      throw new NotFoundException();
+      throw new AppException(ErrorCode.BOOKING_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
     if (!isTenantAdmin(user) && b.userId !== user.sub) {
-      throw new ForbiddenException();
+      throw new AppException(ErrorCode.BOOKING_FORBIDDEN, HttpStatus.FORBIDDEN);
     }
     b.status = BookingStatus.CANCELLED;
     await this.repo.save(b);

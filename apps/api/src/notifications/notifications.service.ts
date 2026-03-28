@@ -42,9 +42,7 @@ export class NotificationsService {
       const reminderJob = await this.queue.getJob(`reminder-${bookingId}`);
       if (reminderJob) {
         await reminderJob.remove();
-        this.logger.debug(
-          `Removed pending reminder for booking ${bookingId}`,
-        );
+        this.logger.debug(`Removed pending reminder for booking ${bookingId}`);
       }
     } catch {
       /* reminder already processed or missing — ignore */

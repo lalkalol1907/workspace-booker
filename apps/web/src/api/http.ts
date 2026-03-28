@@ -14,8 +14,25 @@ export function setStoredToken(token: string | null): void {
   }
 }
 
+/** Достаёт errorCode из тела ответа Nest (в т.ч. вложенного в message). */
+export function parseErrorCodeFromBody(body: unknown): string | null {
+  if (typeof body !== 'object' || body === null) return null;
+  const o = body as Record<string, unknown>;
+  if (typeof o.errorCode === 'string') return o.errorCode;
+  if (
+    typeof o.message === 'object' &&
+    o.message !== null &&
+    !Array.isArray(o.message)
+  ) {
+    const m = o.message as Record<string, unknown>;
+    if (typeof m.errorCode === 'string') return m.errorCode;
+  }
+  return null;
+}
+
 export class ApiError extends Error {
   readonly status: number;
+  readonly errorCode: string | null;
   readonly body?: unknown;
 
   constructor(message: string, status: number, body?: unknown) {
@@ -23,7 +40,19 @@ export class ApiError extends Error {
     this.name = 'ApiError';
     this.status = status;
     this.body = body;
+    this.errorCode = parseErrorCodeFromBody(body);
   }
+}
+
+/** Надёжнее, чем instanceof, при дублировании бандла модулей. */
+export function isApiError(e: unknown): e is ApiError {
+  if (e instanceof ApiError) return true;
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    (e as { name?: unknown }).name === 'ApiError' &&
+    typeof (e as { status?: unknown }).status === 'number'
+  );
 }
 
 export async function http<T>(

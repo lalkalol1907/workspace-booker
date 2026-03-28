@@ -1,10 +1,8 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ErrorCode } from '../common/enums/error-code.enum';
+import { AppException } from '../common/exceptions/app.exception';
 import { Location } from '../entities/location.entity';
 import { Resource } from '../entities/resource.entity';
 import { CreateLocationDto } from './dto/create-location.dto';
@@ -37,7 +35,10 @@ export class LocationsService {
         where: { id: dto.parentId, organizationId },
       });
       if (!parent) {
-        throw new ForbiddenException();
+        throw new AppException(
+          ErrorCode.LOCATION_PARENT_NOT_FOUND,
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
       }
     }
     const loc = this.repo.create({
@@ -57,14 +58,20 @@ export class LocationsService {
     const loc = await this.requireInOrg(organizationId, id);
     if (dto.parentId !== undefined) {
       if (dto.parentId === id) {
-        throw new ForbiddenException();
+        throw new AppException(
+          ErrorCode.VALIDATION_ERROR,
+          HttpStatus.BAD_REQUEST,
+        );
       }
       if (dto.parentId) {
         const parent = await this.repo.findOne({
           where: { id: dto.parentId, organizationId },
         });
         if (!parent) {
-          throw new ForbiddenException();
+          throw new AppException(
+            ErrorCode.LOCATION_PARENT_NOT_FOUND,
+            HttpStatus.UNPROCESSABLE_ENTITY,
+          );
         }
       }
       loc.parentId = dto.parentId;
@@ -82,13 +89,19 @@ export class LocationsService {
       where: { parentId: id, organizationId },
     });
     if (childCount > 0) {
-      throw new ForbiddenException();
+      throw new AppException(
+        ErrorCode.LOCATION_HAS_DEPENDENTS,
+        HttpStatus.CONFLICT,
+      );
     }
     const resCount = await this.resources.count({
       where: { locationId: id, organizationId },
     });
     if (resCount > 0) {
-      throw new ForbiddenException();
+      throw new AppException(
+        ErrorCode.LOCATION_HAS_DEPENDENTS,
+        HttpStatus.CONFLICT,
+      );
     }
     await this.repo.delete(loc.id);
   }
@@ -99,7 +112,10 @@ export class LocationsService {
   ): Promise<Location> {
     const loc = await this.repo.findOne({ where: { id, organizationId } });
     if (!loc) {
-      throw new NotFoundException();
+      throw new AppException(
+        ErrorCode.LOCATION_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+      );
     }
     return loc;
   }

@@ -1,15 +1,12 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { Repository } from 'typeorm';
+import { ErrorCode } from '../common/enums/error-code.enum';
 import { UserRole } from '../common/enums/user-role.enum';
+import { AppException } from '../common/exceptions/app.exception';
 import { normalizeOrganizationHostsInput } from '../common/utils/organization-hosts';
 import { OrganizationHost } from '../entities/organization-host.entity';
 import { Organization } from '../entities/organization.entity';
@@ -71,8 +68,9 @@ export class PlatformService {
     }
     const conflict = hosts.find((h) => reserved.includes(h));
     if (conflict) {
-      throw new BadRequestException(
-        `Host ${conflict} is reserved for platform and cannot be used by tenant`,
+      throw new AppException(
+        ErrorCode.HOST_RESERVED,
+        HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
   }
@@ -99,8 +97,9 @@ export class PlatformService {
     const email = dto.email.trim().toLowerCase();
     const rows = await this.userRepo.find({ where: { email } });
     if (rows.length > 1) {
-      throw new ConflictException(
-        'More than one user with this email exists; resolve duplicates first',
+      throw new AppException(
+        ErrorCode.PLATFORM_ADMIN_EMAIL_AMBIGUOUS,
+        HttpStatus.CONFLICT,
       );
     }
     const existing = rows[0] ?? null;
@@ -156,18 +155,21 @@ export class PlatformService {
   ): Promise<OrganizationSummaryDto> {
     const hosts = normalizeOrganizationHostsInput(dto.hosts);
     if (hosts.length === 0) {
-      throw new BadRequestException('At least one valid host is required');
+      throw new AppException(
+        ErrorCode.VALIDATION_ERROR,
+        HttpStatus.BAD_REQUEST,
+      );
     }
     this.assertHostsNotReserved(hosts);
     const slug = dto.slug.toLowerCase();
     const slugTaken = await this.orgRepo.exist({ where: { slug } });
     if (slugTaken) {
-      throw new ConflictException('Slug already in use');
+      throw new AppException(ErrorCode.SLUG_TAKEN, HttpStatus.CONFLICT);
     }
     for (const h of hosts) {
       const taken = await this.orgHostRepo.exist({ where: { host: h } });
       if (taken) {
-        throw new ConflictException(`Host already in use: ${h}`);
+        throw new AppException(ErrorCode.HOST_TAKEN, HttpStatus.CONFLICT);
       }
     }
     const org = this.orgRepo.create({
@@ -197,18 +199,21 @@ export class PlatformService {
     }
     const hosts = normalizeOrganizationHostsInput(dto.hosts);
     if (hosts.length === 0) {
-      throw new BadRequestException('At least one valid host is required');
+      throw new AppException(
+        ErrorCode.VALIDATION_ERROR,
+        HttpStatus.BAD_REQUEST,
+      );
     }
     this.assertHostsNotReserved(hosts);
     const slug = dto.slug.toLowerCase();
     const otherSlug = await this.orgRepo.findOne({ where: { slug } });
     if (otherSlug && otherSlug.id !== id) {
-      throw new ConflictException('Slug already in use');
+      throw new AppException(ErrorCode.SLUG_TAKEN, HttpStatus.CONFLICT);
     }
     for (const h of hosts) {
       const row = await this.orgHostRepo.findOne({ where: { host: h } });
       if (row && row.organizationId !== id) {
-        throw new ConflictException(`Host already in use: ${h}`);
+        throw new AppException(ErrorCode.HOST_TAKEN, HttpStatus.CONFLICT);
       }
     }
     org.name = dto.name.trim();

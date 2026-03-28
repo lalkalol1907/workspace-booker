@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue-sonner';
-import { ApiError } from '@/api/http';
+import { apiErrorMessage } from '@/api/error-messages';
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
@@ -30,11 +30,7 @@ async function submit() {
     const redirect = route.query.redirect as string | undefined;
     await router.push(redirect || '/calendar');
   } catch (e: unknown) {
-    if (e instanceof ApiError) {
-      toast.error(e.message || 'Ошибка входа');
-    } else {
-      toast.error('Неверные данные или ошибка входа');
-    }
+    toast.error(apiErrorMessage(e, 'Не удалось войти. Попробуйте ещё раз.'));
   } finally {
     loading.value = false;
   }

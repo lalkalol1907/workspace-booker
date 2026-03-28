@@ -1,14 +1,12 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
+import { ErrorCode } from '../common/enums/error-code.enum';
 import { UserRole } from '../common/enums/user-role.enum';
+import { AppException } from '../common/exceptions/app.exception';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { normalizeTenantHost } from '../common/utils/tenant-host';
 import { OrganizationHost } from '../entities/organization-host.entity';
@@ -66,7 +64,7 @@ export class AuthService {
   async login(dto: LoginDto, requestHost: string): Promise<TokenResponseDto> {
     const org = await this.resolveTenantFromHost(requestHost);
     if (!org) {
-      throw new UnauthorizedException();
+      throw new AppException(ErrorCode.TENANT_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
     const email = dto.email.toLowerCase();
     const tenantUser = await this.userRepo.findOne({
@@ -97,7 +95,10 @@ export class AuthService {
       }
     }
     if (!user) {
-      throw new UnauthorizedException();
+      throw new AppException(
+        ErrorCode.INVALID_CREDENTIALS,
+        HttpStatus.UNAUTHORIZED,
+      );
     }
     return this.issueTokens(user);
   }
@@ -107,11 +108,17 @@ export class AuthService {
       where: { email: dto.email.toLowerCase(), role: UserRole.SUPER_ADMIN },
     });
     if (!user) {
-      throw new UnauthorizedException();
+      throw new AppException(
+        ErrorCode.INVALID_CREDENTIALS,
+        HttpStatus.UNAUTHORIZED,
+      );
     }
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
     if (!ok) {
-      throw new UnauthorizedException();
+      throw new AppException(
+        ErrorCode.INVALID_CREDENTIALS,
+        HttpStatus.UNAUTHORIZED,
+      );
     }
     return this.issueTokens(user);
   }
@@ -165,10 +172,13 @@ export class AuthService {
     }
     const ok = await bcrypt.compare(dto.currentPassword, user.passwordHash);
     if (!ok) {
-      throw new UnauthorizedException();
+      throw new AppException(
+        ErrorCode.INCORRECT_CURRENT_PASSWORD,
+        HttpStatus.UNAUTHORIZED,
+      );
     }
     if (dto.newPassword === dto.currentPassword) {
-      throw new BadRequestException();
+      throw new AppException(ErrorCode.SAME_PASSWORD, HttpStatus.BAD_REQUEST);
     }
     user.passwordHash = await bcrypt.hash(dto.newPassword, 10);
     user.mustChangePassword = false;

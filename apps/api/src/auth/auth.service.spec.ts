@@ -1,5 +1,5 @@
 import { describe, it, expect, rstest } from '@rstest/core';
-import { UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from '../common/enums/user-role.enum';
 import type { User } from '../entities/user.entity';
@@ -94,7 +94,7 @@ describe('AuthService', () => {
           { email: 'user@example.com', password: 'any' },
           'unknown.host',
         ),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toMatchObject({ response: { errorCode: 'TENANT_NOT_FOUND' } });
     });
 
     it('throws on wrong password', async () => {
@@ -107,7 +107,7 @@ describe('AuthService', () => {
           { email: 'user@example.com', password: 'wrong' },
           'tenant.example.com',
         ),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toMatchObject({ response: { errorCode: 'INVALID_CREDENTIALS' } });
     });
 
     it('allows super admin login from any tenant', async () => {
@@ -155,7 +155,7 @@ describe('AuthService', () => {
           email: 'nobody@example.com',
           password: 'any',
         }),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toMatchObject({ response: { errorCode: 'INVALID_CREDENTIALS' } });
     });
 
     it('throws on wrong password', async () => {
@@ -169,7 +169,7 @@ describe('AuthService', () => {
           email: 'admin@example.com',
           password: 'wrong',
         }),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toMatchObject({ response: { errorCode: 'INVALID_CREDENTIALS' } });
     });
   });
 
@@ -245,7 +245,7 @@ describe('AuthService', () => {
           },
           { currentPassword: 'wrong', newPassword: 'new' },
         ),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toMatchObject({ response: { errorCode: 'INCORRECT_CURRENT_PASSWORD' } });
     });
 
     it('throws when new password equals current', async () => {
@@ -266,7 +266,7 @@ describe('AuthService', () => {
             newPassword: 'correct-password',
           },
         ),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toMatchObject({ response: { errorCode: 'SAME_PASSWORD' } });
     });
   });
 

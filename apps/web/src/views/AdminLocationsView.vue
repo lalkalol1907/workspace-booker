@@ -14,6 +14,7 @@ import TableCell from '@/components/ui/table/TableCell.vue';
 import TableHead from '@/components/ui/table/TableHead.vue';
 import TableHeader from '@/components/ui/table/TableHeader.vue';
 import TableRow from '@/components/ui/table/TableRow.vue';
+import { apiErrorMessage } from '@/api/error-messages';
 import { http } from '@/api/http';
 import type { LocationDto } from '@/api/types';
 import { cn } from '@/lib/utils';
@@ -38,8 +39,8 @@ async function load() {
   loading.value = true;
   try {
     rows.value = await http<LocationDto[]>('/locations');
-  } catch {
-    toast.error('Не удалось загрузить локации');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось загрузить локации'));
   } finally {
     loading.value = false;
   }
@@ -89,8 +90,8 @@ async function save() {
     dialog.value = false;
     toast.success('Сохранено');
     await load();
-  } catch {
-    toast.error('Ошибка сохранения');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Ошибка сохранения'));
   }
 }
 
@@ -110,8 +111,8 @@ async function confirmRemove() {
     pendingLocation.value = null;
     confirmOpen.value = false;
     await load();
-  } catch {
-    toast.error('Нельзя удалить (есть дочерние или ресурсы)');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось удалить локацию'));
   }
 }
 

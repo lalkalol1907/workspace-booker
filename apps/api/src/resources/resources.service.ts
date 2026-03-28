@@ -1,9 +1,7 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ErrorCode } from '../common/enums/error-code.enum';
+import { AppException } from '../common/exceptions/app.exception';
 import { Repository } from 'typeorm';
 import { BookingStatus } from '../common/enums/booking-status.enum';
 import { Booking } from '../entities/booking.entity';
@@ -54,7 +52,10 @@ export class ResourcesService {
   ): Promise<ResourceResponseDto> {
     const r = await this.repo.findOne({ where: { id, organizationId } });
     if (!r) {
-      throw new NotFoundException();
+      throw new AppException(
+        ErrorCode.RESOURCE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+      );
     }
     return this.toDto(r);
   }
@@ -66,7 +67,10 @@ export class ResourcesService {
   ): Promise<BusyIntervalResponseDto[]> {
     await this.requireInOrg(organizationId, resourceId);
     if (q.to <= q.from) {
-      throw new ForbiddenException();
+      throw new AppException(
+        ErrorCode.VALIDATION_ERROR,
+        HttpStatus.BAD_REQUEST,
+      );
     }
     const rows = await this.bookings
       .createQueryBuilder('b')
@@ -92,7 +96,10 @@ export class ResourcesService {
       where: { id: dto.locationId, organizationId },
     });
     if (!loc) {
-      throw new ForbiddenException();
+      throw new AppException(
+        ErrorCode.LOCATION_NOT_FOUND,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
     }
     const r = this.repo.create({
       organizationId,
@@ -119,7 +126,10 @@ export class ResourcesService {
         where: { id: dto.locationId, organizationId },
       });
       if (!loc) {
-        throw new ForbiddenException();
+        throw new AppException(
+          ErrorCode.LOCATION_NOT_FOUND,
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
       }
       r.locationId = dto.locationId;
     }
@@ -157,7 +167,10 @@ export class ResourcesService {
   ): Promise<Resource> {
     const r = await this.repo.findOne({ where: { id, organizationId } });
     if (!r) {
-      throw new NotFoundException();
+      throw new AppException(
+        ErrorCode.RESOURCE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+      );
     }
     return r;
   }

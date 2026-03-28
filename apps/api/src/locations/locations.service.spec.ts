@@ -1,5 +1,4 @@
 import { describe, it, expect, rstest } from '@rstest/core';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { Location } from '../entities/location.entity';
 
 rstest.mock('../entities/organization.entity', () => ({
@@ -76,7 +75,7 @@ describe('LocationsService', () => {
 
       await expect(
         service.create(ORG_ID, { name: 'Sub', parentId: 'missing' }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'LOCATION_PARENT_NOT_FOUND' } });
     });
   });
 
@@ -99,7 +98,7 @@ describe('LocationsService', () => {
 
       await expect(
         service.update(ORG_ID, 'loc-1', { parentId: 'loc-1' }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'VALIDATION_ERROR' } });
     });
 
     it('rejects parent from different org', async () => {
@@ -110,7 +109,7 @@ describe('LocationsService', () => {
 
       await expect(
         service.update(ORG_ID, 'loc-1', { parentId: 'foreign-loc' }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'LOCATION_PARENT_NOT_FOUND' } });
     });
   });
 
@@ -131,8 +130,8 @@ describe('LocationsService', () => {
       locationRepo.findOne.mockResolvedValue(mockLocation());
       locationRepo.count.mockResolvedValue(2);
 
-      await expect(service.remove(ORG_ID, 'loc-1')).rejects.toThrow(
-        ForbiddenException,
+      await expect(service.remove(ORG_ID, 'loc-1')).rejects.toMatchObject(
+        { response: { errorCode: 'LOCATION_HAS_DEPENDENTS' } },
       );
     });
 
@@ -142,8 +141,8 @@ describe('LocationsService', () => {
       locationRepo.count.mockResolvedValue(0);
       resourceRepo.count.mockResolvedValue(3);
 
-      await expect(service.remove(ORG_ID, 'loc-1')).rejects.toThrow(
-        ForbiddenException,
+      await expect(service.remove(ORG_ID, 'loc-1')).rejects.toMatchObject(
+        { response: { errorCode: 'LOCATION_HAS_DEPENDENTS' } },
       );
     });
 
@@ -151,8 +150,8 @@ describe('LocationsService', () => {
       const { service, locationRepo } = createService();
       locationRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.remove(ORG_ID, 'missing')).rejects.toThrow(
-        NotFoundException,
+      await expect(service.remove(ORG_ID, 'missing')).rejects.toMatchObject(
+        { response: { errorCode: 'LOCATION_NOT_FOUND' } },
       );
     });
   });

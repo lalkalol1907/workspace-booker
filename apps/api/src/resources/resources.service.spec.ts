@@ -1,5 +1,4 @@
 import { describe, it, expect, rstest } from '@rstest/core';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ResourceType } from '../common/enums/resource-type.enum';
 import type { Resource } from '../entities/resource.entity';
 import type { Location } from '../entities/location.entity';
@@ -96,7 +95,7 @@ describe('ResourcesService', () => {
           type: ResourceType.ROOM,
           capacity: 1,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'LOCATION_NOT_FOUND' } });
     });
   });
 
@@ -120,7 +119,7 @@ describe('ResourcesService', () => {
 
       await expect(
         service.update(ORG_ID, 'missing', { name: 'X' }),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toMatchObject({ response: { errorCode: 'RESOURCE_NOT_FOUND' } });
     });
   });
 
@@ -145,7 +144,7 @@ describe('ResourcesService', () => {
       const t = new Date('2025-01-01T10:00:00Z');
       await expect(
         service.availability(ORG_ID, 'r-1', { from: t, to: t }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toMatchObject({ response: { errorCode: 'VALIDATION_ERROR' } });
     });
   });
 });

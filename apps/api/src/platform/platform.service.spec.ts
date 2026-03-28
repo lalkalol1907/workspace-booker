@@ -1,9 +1,5 @@
 import { describe, it, expect, rstest } from '@rstest/core';
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { UserRole } from '../common/enums/user-role.enum';
 import type { User } from '../entities/user.entity';
 import type { Organization } from '../entities/organization.entity';
@@ -125,7 +121,7 @@ describe('PlatformService', () => {
 
       await expect(
         service.upsertPlatformAdmin({ email: 'dup@test.com' }),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toMatchObject({ response: { errorCode: 'PLATFORM_ADMIN_EMAIL_AMBIGUOUS' } });
     });
   });
 
@@ -155,7 +151,7 @@ describe('PlatformService', () => {
           slug: 'nohost',
           hosts: [''],
         }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toMatchObject({ response: { errorCode: 'VALIDATION_ERROR' } });
     });
 
     it('rejects duplicate slug', async () => {
@@ -169,7 +165,7 @@ describe('PlatformService', () => {
           slug: 'taken',
           hosts: ['dup.example.com'],
         }),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toMatchObject({ response: { errorCode: 'SLUG_TAKEN' } });
     });
 
     it('rejects duplicate host', async () => {
@@ -183,7 +179,7 @@ describe('PlatformService', () => {
           slug: 'duphost',
           hosts: ['taken.example.com'],
         }),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toMatchObject({ response: { errorCode: 'HOST_TAKEN' } });
     });
 
     it('rejects reserved platform host', async () => {
@@ -200,7 +196,7 @@ describe('PlatformService', () => {
           slug: 'reserved',
           hosts: ['admin.example.com'],
         }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toMatchObject({ response: { errorCode: 'HOST_RESERVED' } });
     });
   });
 
@@ -248,7 +244,7 @@ describe('PlatformService', () => {
           slug: 'taken',
           hosts: ['x.com'],
         }),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toMatchObject({ response: { errorCode: 'SLUG_TAKEN' } });
     });
   });
 });

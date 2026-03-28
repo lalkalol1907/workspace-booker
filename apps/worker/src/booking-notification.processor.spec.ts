@@ -9,6 +9,45 @@ rstest.mock('api/entities/organization-host.entity', () => ({
 }));
 rstest.mock('api/entities/location.entity', () => ({ Location: class {} }));
 
+/** Rspack бандлит `ejs` некорректно (renderFile не функция). Процессор тестируем без реального EJS. */
+rstest.mock('./mail/render-booking-mail', () => ({
+  bookingMailSubject: (kind: string) => {
+    const subjects: Record<string, string> = {
+      created: 'Бронирование подтверждено',
+      reminder: 'Напоминание: бронирование через 15 минут',
+      cancelled: 'Бронирование отменено',
+    };
+    return subjects[kind] ?? '';
+  },
+  buildBookingMailViewModel: (
+    _kind: string,
+    params: {
+      appName: string;
+      userName: string;
+      resourceName: string;
+      title: string;
+      startsAt: string;
+      endsAt: string;
+    },
+  ) => ({
+    appName: params.appName,
+    pageTitle: 't',
+    headline: 'h',
+    intro: 'i',
+    badgeLabel: 'b',
+    badgeBg: '#000000',
+    userName: params.userName,
+    resourceName: params.resourceName,
+    title: params.title,
+    startsAt: params.startsAt,
+    endsAt: params.endsAt,
+  }),
+  renderBookingMail: async (_kind: string, vm: { resourceName: string; title: string }) => ({
+    html: '<!DOCTYPE html><html><body>test</body></html>',
+    text: `TEXT:${vm.resourceName}:${vm.title}`,
+  }),
+}));
+
 import { BookingNotificationProcessor } from './booking-notification.processor';
 
 const BOOKING_ID = 'b-1';
@@ -31,10 +70,26 @@ function createProcessor() {
   const mailer = {
     sendMail: rstest.fn().mockResolvedValue(undefined),
   };
+  const config = {
+    getOrThrow: rstest.fn((key: string) => {
+      if (key === 'mailer') {
+        return {
+          host: 'localhost',
+          port: 587,
+          user: '',
+          pass: '',
+          from: 'test@test.com',
+          appName: 'Test App',
+        };
+      }
+      throw new Error(`unexpected config ${key}`);
+    }),
+  };
 
   const processor = new BookingNotificationProcessor(
     bookingRepo as any,
     mailer as any,
+    config as any,
   );
 
   return { processor, bookingRepo, mailer };
@@ -56,6 +111,8 @@ describe('BookingNotificationProcessor', () => {
         expect.objectContaining({
           to: 'user@test.com',
           subject: 'Бронирование подтверждено',
+          html: expect.stringContaining('<!DOCTYPE html>'),
+          text: expect.stringContaining('Room A'),
         }),
       );
     });
@@ -72,6 +129,7 @@ describe('BookingNotificationProcessor', () => {
         expect.objectContaining({
           to: 'user@test.com',
           subject: 'Напоминание: бронирование через 15 минут',
+          html: expect.stringContaining('<!DOCTYPE html>'),
         }),
       );
     });
@@ -101,6 +159,7 @@ describe('BookingNotificationProcessor', () => {
         expect.objectContaining({
           to: 'user@test.com',
           subject: 'Бронирование отменено',
+          html: expect.stringContaining('<!DOCTYPE html>'),
         }),
       );
     });

@@ -14,7 +14,8 @@ import TableCell from '@/components/ui/table/TableCell.vue';
 import TableHead from '@/components/ui/table/TableHead.vue';
 import TableHeader from '@/components/ui/table/TableHeader.vue';
 import TableRow from '@/components/ui/table/TableRow.vue';
-import { ApiError, http } from '@/api/http';
+import { apiErrorMessage } from '@/api/error-messages';
+import { http } from '@/api/http';
 import type { InviteUserResponse, UserSummary } from '@/api/types';
 import { useAuthStore } from '@/stores/auth';
 
@@ -60,8 +61,8 @@ async function loadUsers() {
   listLoading.value = true;
   try {
     rows.value = await http<UserSummary[]>('/users');
-  } catch {
-    toast.error('Не удалось загрузить пользователей');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось загрузить пользователей'));
   } finally {
     listLoading.value = false;
   }
@@ -97,11 +98,7 @@ async function submitInvite() {
     toast.success('Пользователь создан');
     await loadUsers();
   } catch (e: unknown) {
-    if (e instanceof ApiError && e.status === 409) {
-      toast.error('Пользователь с таким email уже есть');
-    } else {
-      toast.error('Не удалось создать пользователя');
-    }
+    toast.error(apiErrorMessage(e, 'Не удалось создать пользователя'));
   } finally {
     inviteLoading.value = false;
   }
@@ -141,13 +138,7 @@ async function confirmDelete() {
     confirmOpen.value = false;
     await loadUsers();
   } catch (e: unknown) {
-    if (e instanceof ApiError && e.status === 403) {
-      toast.error('Нельзя удалить себя или администратора');
-    } else if (e instanceof ApiError && e.status === 404) {
-      toast.error('Пользователь не найден');
-    } else {
-      toast.error('Не удалось удалить');
-    }
+    toast.error(apiErrorMessage(e, 'Не удалось удалить пользователя'));
   }
 }
 
@@ -197,13 +188,7 @@ async function confirmResetPassword() {
     resultOpen.value = true;
     toast.success('Новый временный пароль сгенерирован');
   } catch (e: unknown) {
-    if (e instanceof ApiError && e.status === 403) {
-      toast.error('Нельзя сбросить пароль себе или другому администратору');
-    } else if (e instanceof ApiError && e.status === 404) {
-      toast.error('Пользователь не найден');
-    } else {
-      toast.error('Не удалось сбросить пароль');
-    }
+    toast.error(apiErrorMessage(e, 'Не удалось сбросить пароль'));
   } finally {
     resetLoading.value = false;
   }
@@ -235,8 +220,8 @@ async function setTenantRole(row: UserSummary, role: 'admin' | 'member') {
     });
     toast.success('Роль обновлена');
     await loadUsers();
-  } catch {
-    toast.error('Не удалось изменить роль');
+  } catch (e: unknown) {
+    toast.error(apiErrorMessage(e, 'Не удалось изменить роль'));
   } finally {
     roleUpdatingId.value = null;
   }
