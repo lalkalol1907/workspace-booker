@@ -24,11 +24,9 @@ export class NotificationsService {
     displayName: string;
     temporaryPassword: string;
   }): Promise<void> {
-    await this.queue.add(
-      'platform_admin_welcome',
-      payload,
-      { removeOnComplete: true },
-    );
+    await this.queue.add('platform_admin_welcome', payload, {
+      removeOnComplete: true,
+    });
     this.logger.debug(`Enqueued platform_admin_welcome for ${payload.email}`);
   }
 
