@@ -9,6 +9,11 @@ rstest.mock('api/entities/organization-host.entity', () => ({
 }));
 rstest.mock('api/entities/location.entity', () => ({ Location: class {} }));
 
+/** Без сборки `api` в CI нет `dist/.../booking-status.enum.js` — подменяем enum. */
+rstest.mock('api/common/enums/booking-status.enum', () => ({
+  BookingStatus: { CONFIRMED: 'confirmed', CANCELLED: 'cancelled' },
+}));
+
 /** Rspack бандлит `ejs` некорректно (renderFile не функция). Процессор тестируем без реального EJS. */
 rstest.mock('./mail/render-booking-mail', () => ({
   bookingMailSubject: (kind: string) => {
