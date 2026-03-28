@@ -100,8 +100,8 @@ jobs:
           cache-to: type=gha,mode=max
 
   # Только для тегов v*; после успешной сборки всех образов.
-  # Секреты: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, DEPLOY_PATH (каталог с docker-compose.yml),
-  # DEPLOY_DOTENV (полное содержимое .env для сервера).
+  # Секреты: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, DEPLOY_PATH, DEPLOY_DOTENV;
+  # опционально DEPLOY_SSH_KEY_PASSPHRASE — passphrase от ключа, если ключ зашифрован.
   deploy:
     name: Deploy
     needs: build
@@ -118,6 +118,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          passphrase: ${{ secrets.DEPLOY_SSH_KEY_PASSPHRASE }}
           envs: DEPLOY_DOTENV,DEPLOY_PATH,IMAGE_TAG
           script: |
             set -euo pipefail
