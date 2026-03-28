@@ -7,6 +7,10 @@ describe('useThemeStore', () => {
     setActivePinia(createPinia());
     localStorage.removeItem('booker_theme_mode');
     document.documentElement.classList.remove('dark');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false } as Response),
+    );
   });
 
   it('defaults to system mode', () => {
@@ -57,10 +61,10 @@ describe('useThemeStore', () => {
     window.matchMedia = original;
   });
 
-  it('init reads saved mode from localStorage', () => {
+  it('init reads saved mode from localStorage', async () => {
     localStorage.setItem('booker_theme_mode', 'dark');
     const store = useThemeStore();
-    store.init();
+    await store.init();
     expect(store.mode).toBe('dark');
     expect(document.documentElement.classList.contains('dark')).toBe(true);
   });

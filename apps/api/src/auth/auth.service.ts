@@ -8,10 +8,8 @@ import { ErrorCode } from '../common/enums/error-code.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { AppException } from '../common/exceptions/app.exception';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
-import { normalizeTenantHost } from '../common/utils/tenant-host';
-import { OrganizationHost } from '../entities/organization-host.entity';
-import { Organization } from '../entities/organization.entity';
 import { User } from '../entities/user.entity';
+import { TenantResolutionService } from '../tenant-resolution/tenant-resolution.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { MeResponseDto } from './dto/me-response.dto';
@@ -20,49 +18,16 @@ import { TokenResponseDto } from './dto/token-response.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(OrganizationHost)
-    private readonly orgHostRepo: Repository<OrganizationHost>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly tenantResolution: TenantResolutionService,
   ) {}
 
-  private async resolveTenantFromHost(
-    requestHost: string,
-  ): Promise<Organization | null> {
-    const host = normalizeTenantHost(requestHost);
-    const fallback = this.config.get<string>('DEFAULT_TENANT_HOST');
-    const candidates: string[] = [];
-    if (host) {
-      candidates.push(host);
-    }
-    if (
-      (host === '127.0.0.1' || host === '::1') &&
-      !candidates.includes('localhost')
-    ) {
-      candidates.push('localhost');
-    }
-    if (fallback) {
-      const fb = normalizeTenantHost(fallback);
-      if (fb && !candidates.includes(fb)) {
-        candidates.push(fb);
-      }
-    }
-    for (const h of candidates) {
-      const link = await this.orgHostRepo.findOne({
-        where: { host: h },
-        relations: ['organization'],
-      });
-      if (link?.organization) {
-        return link.organization;
-      }
-    }
-    return null;
-  }
-
   async login(dto: LoginDto, requestHost: string): Promise<TokenResponseDto> {
-    const org = await this.resolveTenantFromHost(requestHost);
+    const org =
+      await this.tenantResolution.resolveOrganizationFromHost(requestHost);
     if (!org) {
       throw new AppException(ErrorCode.TENANT_NOT_FOUND, HttpStatus.NOT_FOUND);
     }

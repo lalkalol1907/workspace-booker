@@ -19,7 +19,7 @@ async function main() {
   const pinia = createPinia();
   app.use(pinia);
   app.use(router);
-  useThemeStore().init();
+  await useThemeStore().init();
   setTenantHeadersProvider((): Record<string, string> => {
     const auth = useAuthStore();
     const tenant = useTenantContextStore();

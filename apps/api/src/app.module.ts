@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { BookingsModule } from './bookings/bookings.module';
@@ -14,6 +15,7 @@ import { LocationsModule } from './locations/locations.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ResourcesModule } from './resources/resources.module';
 import { PlatformModule } from './platform/platform.module';
+import { PublicModule } from './public/public.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -29,6 +31,15 @@ import { UsersModule } from './users/users.module';
         const pg = config.getOrThrow<PostgresConfig>('postgres');
         return typeOrmOptionsFromPostgres(pg);
       },
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri:
+          config.get<string>('MONGODB_URI') ??
+          'mongodb://127.0.0.1:27017/booker',
+      }),
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -46,6 +57,7 @@ import { UsersModule } from './users/users.module';
     BookingsModule,
     UsersModule,
     PlatformModule,
+    PublicModule,
     NotificationsModule,
   ],
 })

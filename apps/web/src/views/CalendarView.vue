@@ -17,6 +17,7 @@ import LoadingOverlay from '@/components/ui/loading-overlay/LoadingOverlay.vue';
 import { http } from '@/api/http';
 import type { BookingDto, BookingStatus, ResourceDto } from '@/api/types';
 import { useAuthStore } from '@/stores/auth';
+import { useThemeStore } from '@/stores/theme';
 import { useIsMdUp } from '@/composables/useMediaQuery';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,58 @@ const inputClass = cn(
 );
 
 const auth = useAuthStore();
+const theme = useThemeStore();
+
+/** HSL из theme tokens на :root (учитывает брендинг тенанта). */
+function hslFromCssVar(name: string, alpha: number): string {
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  if (!raw) {
+    return `hsl(0 0% 50% / ${alpha})`;
+  }
+  return `hsl(${raw} / ${alpha})`;
+}
+
+function hslSolidFromCssVar(name: string): string {
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  if (!raw) {
+    return 'hsl(0 0% 50%)';
+  }
+  return `hsl(${raw})`;
+}
+
+function calendarEventColors(dark: boolean, mine: boolean) {
+  if (dark) {
+    if (mine) {
+      return {
+        backgroundColor: hslFromCssVar('--primary', 0.38),
+        borderColor: hslFromCssVar('--primary', 0.55),
+        textColor: hslSolidFromCssVar('--foreground'),
+      };
+    }
+    return {
+      backgroundColor: hslFromCssVar('--muted', 0.55),
+      borderColor: hslFromCssVar('--border', 0.55),
+      textColor: hslSolidFromCssVar('--muted-foreground'),
+    };
+  }
+  if (mine) {
+    return {
+      backgroundColor: hslFromCssVar('--primary', 0.16),
+      borderColor: hslFromCssVar('--primary', 0.42),
+      textColor: hslSolidFromCssVar('--foreground'),
+    };
+  }
+  return {
+    backgroundColor: hslFromCssVar('--muted', 0.92),
+    borderColor: hslFromCssVar('--border', 0.78),
+    textColor: hslSolidFromCssVar('--muted-foreground'),
+  };
+}
+
 const resources = ref<ResourceDto[]>([]);
 const resourceId = ref('');
 const loading = ref(false);
@@ -237,29 +290,7 @@ async function loadEvents(info: EventSourceFuncArg): Promise<EventInput[]> {
       .map((b) => {
         const dark = document.documentElement.classList.contains('dark');
         const mine = b.userId === myId;
-        const palette = dark
-          ? mine
-            ? {
-                backgroundColor: 'hsl(231 32% 26% / 0.76)',
-                borderColor: 'hsl(230 68% 62% / 0.42)',
-                textColor: 'hsl(223 30% 90%)',
-              }
-            : {
-                backgroundColor: 'hsl(231 16% 23% / 0.68)',
-                borderColor: 'hsl(230 20% 40% / 0.45)',
-                textColor: 'hsl(223 20% 84%)',
-              }
-          : mine
-            ? {
-                backgroundColor: 'hsl(229 85% 92% / 0.85)',
-                borderColor: 'hsl(229 64% 76% / 0.75)',
-                textColor: 'hsl(229 34% 30%)',
-              }
-            : {
-                backgroundColor: 'hsl(220 26% 90% / 0.74)',
-                borderColor: 'hsl(220 20% 74% / 0.75)',
-                textColor: 'hsl(220 18% 34%)',
-              };
+        const palette = calendarEventColors(dark, mine);
         return {
           id: b.id,
           title: b.title,
@@ -301,6 +332,21 @@ function refetchCalendar() {
   const api = calendarRef.value?.getApi?.();
   api?.refetchEvents();
 }
+
+watch(
+  () => theme.effectiveMode,
+  () => {
+    refetchCalendar();
+  },
+);
+
+watch(
+  () => [theme.tenantLight, theme.tenantDark],
+  () => {
+    refetchCalendar();
+  },
+  { deep: true },
+);
 
 async function submitBooking() {
   if (!resourceId.value || !bookingStart.value || !bookingEnd.value) {
@@ -775,15 +821,15 @@ watch(resourceId, () => {
   --fc-border-color: hsl(var(--border) / 0.45);
   --fc-page-bg-color: transparent;
   --fc-neutral-bg-color: hsl(var(--background) / 0.25);
-  --fc-list-event-hover-bg-color: hsl(var(--accent) / 0.35);
-  --fc-highlight-color: hsl(var(--accent) / 0.45);
+  --fc-list-event-hover-bg-color: hsl(var(--primary) / 0.22);
+  --fc-highlight-color: hsl(var(--primary) / 0.28);
   --fc-button-bg-color: hsl(var(--background) / 0.5);
   --fc-button-border-color: hsl(var(--border) / 0.55);
   --fc-button-text-color: hsl(var(--muted-foreground));
-  --fc-button-hover-bg-color: hsl(var(--accent) / 0.45);
+  --fc-button-hover-bg-color: hsl(var(--primary) / 0.18);
   --fc-button-hover-border-color: hsl(var(--border) / 0.75);
-  --fc-button-active-bg-color: hsl(var(--accent) / 0.65);
-  --fc-today-bg-color: hsl(var(--accent) / 0.35);
+  --fc-button-active-bg-color: hsl(var(--primary) / 0.28);
+  --fc-today-bg-color: hsl(var(--primary) / 0.14);
   border-radius: 0.9rem;
 }
 
@@ -860,7 +906,7 @@ watch(resourceId, () => {
 }
 
 :deep(.fc .fc-button-primary:not(:disabled):hover) {
-  background-color: hsl(var(--accent) / 0.6);
+  background-color: hsl(var(--primary) / 0.22);
   border-color: hsl(var(--border) / 0.75);
   color: hsl(var(--foreground));
 }

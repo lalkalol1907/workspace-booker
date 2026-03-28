@@ -3,7 +3,6 @@ import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from '../common/enums/user-role.enum';
 import type { User } from '../entities/user.entity';
-import type { OrganizationHost } from '../entities/organization-host.entity';
 
 rstest.mock('../entities/organization.entity', () => ({
   Organization: class {},
@@ -34,18 +33,10 @@ const mockUser = (overrides: Partial<User> = {}): User =>
     ...overrides,
   }) as User;
 
-const mockOrgHost = (): OrganizationHost =>
-  ({
-    id: 'oh-1',
-    organizationId: 'org-1',
-    host: 'tenant.example.com',
-    organization: { id: 'org-1', name: 'Test Org' },
-  }) as any;
+const mockResolvedOrg = () =>
+  ({ id: 'org-1', name: 'Test Org' }) as { id: string; name: string };
 
 function createService() {
-  const orgHostRepo = {
-    findOne: rstest.fn(),
-  };
   const userRepo = {
     findOne: rstest.fn(),
     save: rstest.fn(),
@@ -57,22 +48,27 @@ function createService() {
     get: rstest.fn().mockReturnValue(undefined),
     getOrThrow: rstest.fn(),
   };
+  const tenantResolution = {
+    resolveOrganizationFromHost: rstest.fn(),
+  };
 
   const service = new AuthService(
-    orgHostRepo as any,
     userRepo as any,
     jwt as any,
     config as any,
+    tenantResolution as any,
   );
 
-  return { service, orgHostRepo, userRepo, jwt, config };
+  return { service, userRepo, jwt, config, tenantResolution };
 }
 
 describe('AuthService', () => {
   describe('login', () => {
     it('returns token on valid credentials', async () => {
-      const { service, orgHostRepo, userRepo } = createService();
-      orgHostRepo.findOne.mockResolvedValue(mockOrgHost());
+      const { service, tenantResolution, userRepo } = createService();
+      tenantResolution.resolveOrganizationFromHost.mockResolvedValue(
+        mockResolvedOrg(),
+      );
       userRepo.findOne
         .mockResolvedValueOnce(mockUser())
         .mockResolvedValueOnce(null);
@@ -86,8 +82,8 @@ describe('AuthService', () => {
     });
 
     it('throws when tenant not found', async () => {
-      const { service, orgHostRepo } = createService();
-      orgHostRepo.findOne.mockResolvedValue(null);
+      const { service, tenantResolution } = createService();
+      tenantResolution.resolveOrganizationFromHost.mockResolvedValue(null);
 
       await expect(
         service.login(
@@ -98,8 +94,10 @@ describe('AuthService', () => {
     });
 
     it('throws on wrong password', async () => {
-      const { service, orgHostRepo, userRepo } = createService();
-      orgHostRepo.findOne.mockResolvedValue(mockOrgHost());
+      const { service, tenantResolution, userRepo } = createService();
+      tenantResolution.resolveOrganizationFromHost.mockResolvedValue(
+        mockResolvedOrg(),
+      );
       userRepo.findOne.mockResolvedValue(mockUser());
 
       await expect(
@@ -111,8 +109,10 @@ describe('AuthService', () => {
     });
 
     it('allows super admin login from any tenant', async () => {
-      const { service, orgHostRepo, userRepo } = createService();
-      orgHostRepo.findOne.mockResolvedValue(mockOrgHost());
+      const { service, tenantResolution, userRepo } = createService();
+      tenantResolution.resolveOrganizationFromHost.mockResolvedValue(
+        mockResolvedOrg(),
+      );
       const superAdmin = mockUser({
         id: 'sa-1',
         role: UserRole.SUPER_ADMIN,
@@ -135,7 +135,10 @@ describe('AuthService', () => {
     it('returns token for super admin', async () => {
       const { service, userRepo } = createService();
       userRepo.findOne.mockResolvedValue(
-        mockUser({ role: UserRole.SUPER_ADMIN }),
+        mockUser({
+          role: UserRole.SUPER_ADMIN,
+          email: 'admin@example.com',
+        }),
       );
 
       const result = await service.platformLogin({
@@ -161,7 +164,10 @@ describe('AuthService', () => {
     it('throws on wrong password', async () => {
       const { service, userRepo } = createService();
       userRepo.findOne.mockResolvedValue(
-        mockUser({ role: UserRole.SUPER_ADMIN }),
+        mockUser({
+          role: UserRole.SUPER_ADMIN,
+          email: 'admin@example.com',
+        }),
       );
 
       await expect(
@@ -272,8 +278,10 @@ describe('AuthService', () => {
 
   describe('issueTokens (via login)', () => {
     it('sets organizationId to null for SUPER_ADMIN', async () => {
-      const { service, userRepo, jwt, orgHostRepo } = createService();
-      orgHostRepo.findOne.mockResolvedValue(mockOrgHost());
+      const { service, userRepo, jwt, tenantResolution } = createService();
+      tenantResolution.resolveOrganizationFromHost.mockResolvedValue(
+        mockResolvedOrg(),
+      );
       userRepo.findOne
         .mockResolvedValueOnce(
           mockUser({

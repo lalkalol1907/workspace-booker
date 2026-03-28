@@ -10,10 +10,13 @@ services:
     depends_on:
       - postgres
       - redis
+      - mongo
     restart: unless-stopped
 
   web:
     image: lalkalol1907/workspace-booker-web:${IMAGE_TAG:-latest}
+    env_file:
+      - .env
     volumes:
       - /etc/nginx/ssl:/etc/nginx/ssl
     networks:
@@ -51,6 +54,16 @@ services:
       - .env
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    networks:
+      - booker-network
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - ./mongodata:/data/db
     restart: unless-stopped
 
   redis:

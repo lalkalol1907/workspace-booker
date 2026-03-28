@@ -31,6 +31,9 @@ import { OrganizationSummaryDto } from './dto/organization-summary.dto';
 import { UpsertPlatformAdminDto } from './dto/upsert-platform-admin.dto';
 import { UpdatePlatformOrganizationDto } from './dto/update-platform-organization.dto';
 import { UpdatePlatformUserRoleDto } from './dto/update-platform-user-role.dto';
+import { TenantBrandingResponseDto } from '../tenant-branding/dto/tenant-branding-response.dto';
+import { UpdateTenantBrandingDto } from '../tenant-branding/dto/update-tenant-branding.dto';
+import { TenantBrandingService } from '../tenant-branding/tenant-branding.service';
 import { PlatformService } from './platform.service';
 
 @ApiTags('Platform')
@@ -39,7 +42,10 @@ import { PlatformService } from './platform.service';
 @ApiBearerAuth('jwt')
 @ApiUnauthorizedResponse()
 export class PlatformController {
-  constructor(private readonly platform: PlatformService) {}
+  constructor(
+    private readonly platform: PlatformService,
+    private readonly branding: TenantBrandingService,
+  ) {}
 
   @Get('admins')
   @Roles(UserRole.SUPER_ADMIN)
@@ -99,6 +105,28 @@ export class PlatformController {
     @Body() dto: UpdatePlatformOrganizationDto,
   ): Promise<OrganizationSummaryDto> {
     return this.platform.updateOrganization(organizationId, dto);
+  }
+
+  @Get('organizations/:organizationId/branding')
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get tenant theme tokens (MongoDB)' })
+  @ApiOkResponse({ type: TenantBrandingResponseDto })
+  getOrganizationBranding(
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+  ): Promise<TenantBrandingResponseDto> {
+    return this.branding.getForPlatformOrEmpty(organizationId);
+  }
+
+  @Patch('organizations/:organizationId/branding')
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update tenant theme tokens (merge)' })
+  @ApiBody({ type: UpdateTenantBrandingDto })
+  @ApiOkResponse({ type: TenantBrandingResponseDto })
+  updateOrganizationBranding(
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+    @Body() dto: UpdateTenantBrandingDto,
+  ): Promise<TenantBrandingResponseDto> {
+    return this.branding.upsert(organizationId, dto);
   }
 
   @Patch('organizations/:organizationId/users/:userId/role')

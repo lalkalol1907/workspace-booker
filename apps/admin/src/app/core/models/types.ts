@@ -21,6 +21,13 @@ export interface OrganizationSummary {
   createdAt: string;
 }
 
+/** Токены темы (ключи camelCase → CSS --kebab-case) */
+export interface TenantBranding {
+  organizationId: string;
+  light: Record<string, string>;
+  dark: Record<string, string>;
+}
+
 export interface PlatformAdminSummary {
   id: string;
   email: string;
