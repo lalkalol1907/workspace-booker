@@ -39,6 +39,15 @@ const adminPayload: JwtPayload = {
   tokenVersion: 0,
 };
 
+const mockResource = (overrides: Partial<Resource> = {}): Resource =>
+  ({
+    id: 'r-1',
+    organizationId: ORG_ID,
+    isActive: true,
+    maxBookingMinutes: null,
+    ...overrides,
+  }) as any;
+
 const mockBooking = (overrides: Partial<Booking> = {}): Booking =>
   ({
     id: 'b-1',
@@ -51,17 +60,8 @@ const mockBooking = (overrides: Partial<Booking> = {}): Booking =>
     status: BookingStatus.CONFIRMED,
     createdAt: new Date(),
     updatedAt: new Date(),
-    resource: { name: 'Room A' },
+    resource: mockResource({ name: 'Room A' }),
     user: { displayName: 'Test', email: 'member@test.com' },
-    ...overrides,
-  }) as any;
-
-const mockResource = (overrides: Partial<Resource> = {}): Resource =>
-  ({
-    id: 'r-1',
-    organizationId: ORG_ID,
-    isActive: true,
-    maxBookingMinutes: null,
     ...overrides,
   }) as any;
 
@@ -92,9 +92,11 @@ function createService() {
   const notifications = {
     sendCreated: rstest.fn().mockResolvedValue(undefined),
     scheduleReminder: rstest.fn().mockResolvedValue(undefined),
+    scheduleInProgress: rstest.fn().mockResolvedValue(undefined),
     scheduleEndingSoon: rstest.fn().mockResolvedValue(undefined),
     scheduleEnded: rstest.fn().mockResolvedValue(undefined),
     sendCancelled: rstest.fn().mockResolvedValue(undefined),
+    rescheduleScheduledJobs: rstest.fn().mockResolvedValue(undefined),
   };
 
   const service = new BookingsService(
@@ -253,6 +255,69 @@ describe('BookingsService', () => {
         }),
       ).rejects.toMatchObject({ response: { errorCode: 'BOOKING_FORBIDDEN' } });
     });
+
+    it('reschedules notifications when start/end change', async () => {
+      const { service, bookingRepo, notifications, qb } = createService();
+      const booking = mockBooking();
+      qb.getCount.mockResolvedValue(0);
+      bookingRepo.findOne
+        .mockResolvedValueOnce(booking)
+        .mockResolvedValueOnce(booking);
+
+      await service.update(memberPayload, ORG_ID, 'b-1', {
+        startsAt: new Date('2025-01-01T12:00:00Z'),
+        endsAt: new Date('2025-01-01T13:00:00Z'),
+      });
+
+      expect(notifications.rescheduleScheduledJobs).toHaveBeenCalledWith(
+        'b-1',
+        expect.any(Date),
+        expect.any(Date),
+      );
+    });
+
+    it('does not reschedule when only title changes', async () => {
+      const { service, bookingRepo, notifications, qb } = createService();
+      const booking = mockBooking();
+      bookingRepo.findOne
+        .mockResolvedValueOnce(booking)
+        .mockResolvedValueOnce(booking);
+
+      await service.update(memberPayload, ORG_ID, 'b-1', {
+        title: 'New title',
+      });
+
+      expect(qb.getCount).not.toHaveBeenCalled();
+      expect(notifications.rescheduleScheduledJobs).not.toHaveBeenCalled();
+    });
+
+    it('rejects overlap with another confirmed booking', async () => {
+      const { service, bookingRepo, qb } = createService();
+      const booking = mockBooking();
+      bookingRepo.findOne.mockResolvedValue(booking);
+      qb.getCount.mockResolvedValue(1);
+
+      await expect(
+        service.update(memberPayload, ORG_ID, 'b-1', {
+          startsAt: new Date('2025-01-01T12:00:00Z'),
+          endsAt: new Date('2025-01-01T13:00:00Z'),
+        }),
+      ).rejects.toMatchObject({ response: { errorCode: 'BOOKING_CONFLICT' } });
+    });
+
+    it('rejects editing times on cancelled booking', async () => {
+      const { service, bookingRepo } = createService();
+      bookingRepo.findOne.mockResolvedValue(
+        mockBooking({ status: BookingStatus.CANCELLED }),
+      );
+
+      await expect(
+        service.update(memberPayload, ORG_ID, 'b-1', {
+          startsAt: new Date('2025-01-01T12:00:00Z'),
+          endsAt: new Date('2025-01-01T13:00:00Z'),
+        }),
+      ).rejects.toMatchObject({ response: { errorCode: 'BOOKING_NOT_EDITABLE' } });
+    });
   });
 
   describe('remove', () => {
@@ -274,6 +339,17 @@ describe('BookingsService', () => {
       await expect(
         service.remove(memberPayload, ORG_ID, 'missing'),
       ).rejects.toMatchObject({ response: { errorCode: 'BOOKING_NOT_FOUND' } });
+    });
+
+    it('rejects cancel when booking already completed', async () => {
+      const { service, bookingRepo } = createService();
+      bookingRepo.findOne.mockResolvedValue(
+        mockBooking({ status: BookingStatus.COMPLETED }),
+      );
+
+      await expect(
+        service.remove(memberPayload, ORG_ID, 'b-1'),
+      ).rejects.toMatchObject({ response: { errorCode: 'BOOKING_NOT_EDITABLE' } });
     });
   });
 });

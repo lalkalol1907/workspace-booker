@@ -15,7 +15,7 @@ import Label from '@/components/ui/label/Label.vue';
 import ConfirmDialog from '@/components/ui/alert-dialog/ConfirmDialog.vue';
 import LoadingOverlay from '@/components/ui/loading-overlay/LoadingOverlay.vue';
 import { http } from '@/api/http';
-import type { BookingDto, ResourceDto } from '@/api/types';
+import type { BookingDto, BookingStatus, ResourceDto } from '@/api/types';
 import { useAuthStore } from '@/stores/auth';
 import { useIsMdUp } from '@/composables/useMediaQuery';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,10 @@ const loading = ref(false);
 const calendarRef = ref<InstanceType<typeof FullCalendar> | null>(null);
 
 const bookingModalOpen = ref(false);
+const editingBookingId = ref<string | null>(null);
+const editingBookingMeta = ref<{ userDisplayName: string; userEmail: string } | null>(
+  null,
+);
 const bookingTitle = ref('');
 const bookingStart = ref('');
 const bookingEnd = ref('');
@@ -52,7 +56,7 @@ const pendingCancel = ref<{
   userEmail: string;
 } | null>(null);
 
-const calendarExpanded = ref(false);
+const calendarExpanded = ref(true);
 
 // Control visible time range (for timeGrid views).
 // Default range: 07:00 - 22:00; expanded via buttons to midnight bounds.
@@ -72,14 +76,19 @@ const selectedResource = computed(
 );
 
 const bookingModalDescription = computed(() => {
-  const base =
-    'Укажите название и время. При выделении слота на календаре время подставляется автоматически.';
+  const base = editingBookingId.value
+    ? 'Измените название и время. Пересечение с другими подтверждёнными бронями на этот ресурс недопустимо.'
+    : 'Укажите название и время. При выделении слота на календаре время подставляется автоматически.';
   const max = selectedResource.value?.maxBookingMinutes;
   if (max == null) {
     return base;
   }
   return `${base} Максимальная длительность одной брони для выбранного ресурса — ${max} мин.`;
 });
+
+const bookingDialogTitle = computed(() =>
+  editingBookingId.value ? 'Редактировать бронь' : 'Новая бронь',
+);
 
 /** Длительность интервала в миллисекундах или null, если даты не заданы или некорректны */
 const bookingDurationMs = computed(() => {
@@ -130,6 +139,8 @@ function openBookingModal() {
     toast.warning('Сначала выберите ресурс');
     return;
   }
+  editingBookingId.value = null;
+  editingBookingMeta.value = null;
   if (!bookingStart.value || !bookingEnd.value) {
     const now = new Date();
     const end = new Date(now.getTime() + 60 * 60 * 1000);
@@ -137,6 +148,45 @@ function openBookingModal() {
     bookingEnd.value = toLocalDatetimeValue(end);
   }
   bookingModalOpen.value = true;
+}
+
+function openEditBookingModal(args: {
+  id: string;
+  title: string;
+  start: Date | null;
+  end: Date | null;
+  userDisplayName: string;
+  userEmail: string;
+}) {
+  editingBookingId.value = args.id;
+  editingBookingMeta.value = {
+    userDisplayName: args.userDisplayName,
+    userEmail: args.userEmail,
+  };
+  bookingTitle.value = args.title;
+  bookingStart.value = args.start ? toLocalDatetimeValue(args.start) : '';
+  bookingEnd.value = args.end ? toLocalDatetimeValue(args.end) : '';
+  bookingModalOpen.value = true;
+}
+
+function openCancelFromEditModal() {
+  if (!editingBookingId.value || !editingBookingMeta.value) {
+    return;
+  }
+  const start = bookingStart.value ? new Date(bookingStart.value) : null;
+  const end = bookingEnd.value ? new Date(bookingEnd.value) : null;
+  pendingCancel.value = {
+    id: editingBookingId.value,
+    title: bookingTitle.value,
+    start,
+    end,
+    userDisplayName: editingBookingMeta.value.userDisplayName,
+    userEmail: editingBookingMeta.value.userEmail,
+  };
+  bookingModalOpen.value = false;
+  editingBookingId.value = null;
+  editingBookingMeta.value = null;
+  cancelConfirmOpen.value = true;
 }
 
 watch(calendarExpanded, async (open) => {
@@ -161,6 +211,8 @@ watch([fromMidnight, toMidnight], async () => {
 
 watch(bookingModalOpen, (open) => {
   if (!open) {
+    editingBookingId.value = null;
+    editingBookingMeta.value = null;
     void nextTick(() => {
       calendarRef.value?.getApi?.()?.unselect?.();
     });
@@ -181,7 +233,7 @@ async function loadEvents(info: EventSourceFuncArg): Promise<EventInput[]> {
     const rows = await http<BookingDto[]>(`/bookings?${q.toString()}`);
     const myId = auth.user?.userId;
     return rows
-      .filter((b) => b.status === 'confirmed')
+      .filter((b) => b.status !== 'cancelled')
       .map((b) => {
         const dark = document.documentElement.classList.contains('dark');
         const mine = b.userId === myId;
@@ -217,6 +269,7 @@ async function loadEvents(info: EventSourceFuncArg): Promise<EventInput[]> {
             userDisplayName: b.userDisplayName,
             userEmail: b.userEmail,
             userId: b.userId,
+            status: b.status,
           },
           ...palette,
         };
@@ -230,6 +283,8 @@ async function loadEvents(info: EventSourceFuncArg): Promise<EventInput[]> {
 }
 
 function handleSelect(sel: DateSelectArg) {
+  editingBookingId.value = null;
+  editingBookingMeta.value = null;
   bookingStart.value = toLocalDatetimeValue(sel.start);
   bookingEnd.value = toLocalDatetimeValue(sel.end);
   bookingModalOpen.value = true;
@@ -247,7 +302,7 @@ function refetchCalendar() {
   api?.refetchEvents();
 }
 
-async function createBooking() {
+async function submitBooking() {
   if (!resourceId.value || !bookingStart.value || !bookingEnd.value) {
     toast.warning('Укажите начало и конец');
     return;
@@ -274,24 +329,44 @@ async function createBooking() {
   }
   loading.value = true;
   try {
-    await http('/bookings', {
-      method: 'POST',
-      body: JSON.stringify({
-        resourceId: resourceId.value,
-        startsAt: start.toISOString(),
-        endsAt: end.toISOString(),
-        title: bookingTitle.value.trim() || 'Бронь',
-      }),
-    });
-    toast.success('Забронировано');
+    const payload = {
+      startsAt: start.toISOString(),
+      endsAt: end.toISOString(),
+      title: bookingTitle.value.trim() || 'Бронь',
+    };
+    if (editingBookingId.value) {
+      await http(`/bookings/${editingBookingId.value}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+      toast.success('Изменения сохранены');
+    } else {
+      await http('/bookings', {
+        method: 'POST',
+        body: JSON.stringify({
+          resourceId: resourceId.value,
+          ...payload,
+        }),
+      });
+      toast.success('Забронировано');
+    }
     bookingModalOpen.value = false;
+    editingBookingId.value = null;
+    editingBookingMeta.value = null;
     bookingTitle.value = '';
     bookingStart.value = '';
     bookingEnd.value = '';
     calendarRef.value?.getApi?.()?.unselect?.();
     refetchCalendar();
   } catch (e: unknown) {
-    toast.error(apiErrorMessage(e, 'Не удалось создать бронь'));
+    toast.error(
+      apiErrorMessage(
+        e,
+        editingBookingId.value
+          ? 'Не удалось сохранить изменения'
+          : 'Не удалось создать бронь',
+      ),
+    );
   } finally {
     loading.value = false;
   }
@@ -386,25 +461,29 @@ const calendarOptions = computed(() => ({
       userDisplayName?: string;
       userEmail?: string;
       userId?: string;
+      status?: BookingStatus;
     };
 
     const userDisplayName = ext.userDisplayName ?? '';
     const userEmail = ext.userEmail ?? '';
     const bookingUserId = ext.userId;
+    const bookingStatus = ext.status ?? 'confirmed';
 
-    const canCancel =
+    const isOwnerOrAdmin =
       auth.isAdmin || (bookingUserId != null && bookingUserId === auth.user?.userId);
+    const canEdit =
+      isOwnerOrAdmin &&
+      (bookingStatus === 'confirmed' || bookingStatus === 'in_progress');
 
-    if (canCancel) {
-      pendingCancel.value = {
+    if (canEdit) {
+      openEditBookingModal({
         id: String((arg.event as any).id),
-        title: arg.event.title,
-        start: arg.event.start,
-        end: arg.event.end,
+        title: String(arg.event.title ?? ''),
+        start: arg.event.start ?? null,
+        end: arg.event.end ?? null,
         userDisplayName,
         userEmail,
-      };
-      cancelConfirmOpen.value = true;
+      });
       return;
     }
 
@@ -583,13 +662,13 @@ watch(resourceId, () => {
 
     <FormDialog
       v-model:open="bookingModalOpen"
-      title="Новая бронь"
+      :title="bookingDialogTitle"
       :description="bookingModalDescription"
     >
       <form
         id="booking-form"
         class="space-y-4"
-        @submit.prevent="createBooking"
+        @submit.prevent="submitBooking"
       >
         <div class="space-y-2">
           <Label for="book-title">Название</Label>
@@ -642,20 +721,39 @@ watch(resourceId, () => {
         </p>
       </form>
       <template #footer>
-        <Button
-          type="button"
-          variant="outline"
-          @click="bookingModalOpen = false"
-        >
-          Отмена
-        </Button>
-        <Button
-          type="submit"
-          form="booking-form"
-          :disabled="loading || bookingExceedsMaxDuration"
-        >
-          {{ loading ? 'Сохранение…' : 'Забронировать' }}
-        </Button>
+        <div class="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <Button
+            v-if="editingBookingId"
+            type="button"
+            variant="ghost"
+            class="text-destructive hover:bg-destructive/10 hover:text-destructive sm:order-first"
+            @click="openCancelFromEditModal"
+          >
+            Отменить бронь
+          </Button>
+          <div class="flex flex-1 justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              @click="bookingModalOpen = false"
+            >
+              Закрыть
+            </Button>
+            <Button
+              type="submit"
+              form="booking-form"
+              :disabled="loading || bookingExceedsMaxDuration"
+            >
+              {{
+                loading
+                  ? 'Сохранение…'
+                  : editingBookingId
+                    ? 'Сохранить'
+                    : 'Забронировать'
+              }}
+            </Button>
+          </div>
+        </div>
       </template>
     </FormDialog>
 

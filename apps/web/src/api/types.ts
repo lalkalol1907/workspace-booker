@@ -2,7 +2,11 @@ export type UserRole = 'super_admin' | 'admin' | 'member';
 
 export type ResourceType = 'desk' | 'room' | 'other';
 
-export type BookingStatus = 'confirmed' | 'cancelled';
+export type BookingStatus =
+  | 'confirmed'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled';
 
 export interface MeResponse {
   userId: string;

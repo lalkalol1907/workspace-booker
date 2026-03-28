@@ -52,16 +52,48 @@ export class BookingNotificationProcessor extends WorkerHost {
       return;
     }
 
+    if (job.name === 'in_progress') {
+      await this.applyInProgressStatus(booking);
+      return;
+    }
+
     if (
-      (job.name === 'reminder' ||
-        job.name === 'ending_soon' ||
-        job.name === 'ended') &&
+      job.name === 'reminder' &&
       booking.status !== BookingStatus.CONFIRMED
     ) {
       this.logger.debug(
-        `Booking ${bookingId} is no longer confirmed, skipping ${job.name}`,
+        `Booking ${bookingId} is not confirmed, skipping ${job.name}`,
       );
       return;
+    }
+
+    if (
+      job.name === 'ending_soon' &&
+      booking.status !== BookingStatus.CONFIRMED &&
+      booking.status !== BookingStatus.IN_PROGRESS
+    ) {
+      this.logger.debug(
+        `Booking ${bookingId} is not active, skipping ${job.name}`,
+      );
+      return;
+    }
+
+    if (job.name === 'ended') {
+      if (
+        booking.status === BookingStatus.CANCELLED ||
+        booking.status === BookingStatus.COMPLETED
+      ) {
+        this.logger.debug(
+          `Booking ${bookingId} already finished, skipping ${job.name}`,
+        );
+        return;
+      }
+      if (
+        booking.status !== BookingStatus.CONFIRMED &&
+        booking.status !== BookingStatus.IN_PROGRESS
+      ) {
+        return;
+      }
     }
 
     const userEmail = booking.user?.email;
@@ -103,8 +135,41 @@ export class BookingNotificationProcessor extends WorkerHost {
       text,
     });
 
+    if (job.name === 'ended') {
+      booking.status = BookingStatus.COMPLETED;
+      await this.bookingRepo.save(booking);
+    }
+
     this.logger.log(
       `Sent "${job.name}" email to ${userEmail} for booking ${bookingId}`,
     );
+  }
+
+  private async applyInProgressStatus(booking: Booking): Promise<void> {
+    if (
+      booking.status === BookingStatus.CANCELLED ||
+      booking.status === BookingStatus.COMPLETED
+    ) {
+      return;
+    }
+    if (booking.status === BookingStatus.IN_PROGRESS) {
+      return;
+    }
+    const now = Date.now();
+    const start = booking.startsAt.getTime();
+    const end = booking.endsAt.getTime();
+    if (now >= end) {
+      booking.status = BookingStatus.COMPLETED;
+      await this.bookingRepo.save(booking);
+      this.logger.debug(
+        `Booking ${booking.id} marked completed (in_progress job after end)`,
+      );
+      return;
+    }
+    if (now >= start && booking.status === BookingStatus.CONFIRMED) {
+      booking.status = BookingStatus.IN_PROGRESS;
+      await this.bookingRepo.save(booking);
+      this.logger.debug(`Booking ${booking.id} marked in_progress`);
+    }
   }
 }

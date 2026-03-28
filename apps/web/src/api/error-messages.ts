@@ -14,6 +14,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   BOOKING_FORBIDDEN: 'Нет прав на управление этим бронированием',
   BOOKING_CONFLICT: 'Это время уже занято — выберите другой слот',
   BOOKING_DURATION_EXCEEDED: 'Превышена максимальная длительность брони для этого ресурса',
+  BOOKING_NOT_EDITABLE: 'Нельзя изменить отменённое бронирование',
   RESOURCE_NOT_AVAILABLE: 'Ресурс недоступен для бронирования',
 
   // Users

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ErrorCode } from '../common/enums/error-code.enum';
 import { AppException } from '../common/exceptions/app.exception';
 import { Repository } from 'typeorm';
-import { BookingStatus } from '../common/enums/booking-status.enum';
+import { OCCUPYING_BOOKING_STATUSES } from '../bookings/occupying-statuses';
 import { Booking } from '../entities/booking.entity';
 import { Location } from '../entities/location.entity';
 import { Resource } from '../entities/resource.entity';
@@ -76,7 +76,7 @@ export class ResourcesService {
       .createQueryBuilder('b')
       .where('b.resourceId = :rid', { rid: resourceId })
       .andWhere('b.organizationId = :oid', { oid: organizationId })
-      .andWhere('b.status = :st', { st: BookingStatus.CONFIRMED })
+      .andWhere('b.status IN (:...occ)', { occ: OCCUPYING_BOOKING_STATUSES })
       .andWhere('b.startsAt < :end', { end: q.to })
       .andWhere('b.endsAt > :start', { start: q.from })
       .orderBy('b.starts_at', 'ASC')

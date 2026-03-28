@@ -13,6 +13,7 @@ import { BookingQueryDto } from './dto/booking-query.dto';
 import { BookingResponseDto } from './dto/booking-response.dto';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
+import { OCCUPYING_BOOKING_STATUSES } from './occupying-statuses';
 
 @Injectable()
 export class BookingsService {
@@ -115,7 +116,7 @@ export class BookingsService {
       .createQueryBuilder('b')
       .where('b.resourceId = :rid', { rid: dto.resourceId })
       .andWhere('b.organizationId = :oid', { oid: organizationId })
-      .andWhere('b.status = :st', { st: BookingStatus.CONFIRMED })
+      .andWhere('b.status IN (:...occ)', { occ: OCCUPYING_BOOKING_STATUSES })
       .andWhere('b.startsAt < :end', { end: dto.endsAt })
       .andWhere('b.endsAt > :start', { start: dto.startsAt })
       .getCount();
@@ -134,6 +135,7 @@ export class BookingsService {
     await this.repo.save(b);
     await this.notifications.sendCreated(b.id);
     await this.notifications.scheduleReminder(b.id, b.startsAt);
+    await this.notifications.scheduleInProgress(b.id, b.startsAt);
     await this.notifications.scheduleEndingSoon(b.id, b.endsAt);
     await this.notifications.scheduleEnded(b.id, b.endsAt);
     const withRelations = await this.repo.findOne({
@@ -151,6 +153,7 @@ export class BookingsService {
   ): Promise<BookingResponseDto> {
     const b = await this.repo.findOne({
       where: { id, organizationId },
+      relations: ['resource'],
     });
     if (!b) {
       throw new AppException(ErrorCode.BOOKING_NOT_FOUND, HttpStatus.NOT_FOUND);
@@ -158,14 +161,127 @@ export class BookingsService {
     if (!isTenantAdmin(user) && b.userId !== user.sub) {
       throw new AppException(ErrorCode.BOOKING_FORBIDDEN, HttpStatus.FORBIDDEN);
     }
+
     const wasCancelled = b.status === BookingStatus.CANCELLED;
+    const wantsMetaEdit =
+      dto.startsAt !== undefined ||
+      dto.endsAt !== undefined ||
+      dto.title !== undefined;
+
+    if (wasCancelled && wantsMetaEdit) {
+      throw new AppException(
+        ErrorCode.BOOKING_NOT_EDITABLE,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    if (b.status === BookingStatus.COMPLETED && wantsMetaEdit) {
+      throw new AppException(
+        ErrorCode.BOOKING_NOT_EDITABLE,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    if (
+      dto.status === BookingStatus.IN_PROGRESS ||
+      dto.status === BookingStatus.COMPLETED
+    ) {
+      throw new AppException(
+        ErrorCode.VALIDATION_ERROR,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (
+      dto.status === BookingStatus.CANCELLED &&
+      (dto.startsAt !== undefined ||
+        dto.endsAt !== undefined ||
+        dto.title !== undefined)
+    ) {
+      throw new AppException(
+        ErrorCode.VALIDATION_ERROR,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const prevStarts = b.startsAt;
+    const prevEnds = b.endsAt;
+    const newStarts = dto.startsAt ?? b.startsAt;
+    const newEnds = dto.endsAt ?? b.endsAt;
+
+    if (dto.startsAt !== undefined || dto.endsAt !== undefined) {
+      if (newEnds <= newStarts) {
+        throw new AppException(
+          ErrorCode.VALIDATION_ERROR,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      const res = b.resource;
+      if (
+        res?.maxBookingMinutes != null &&
+        newEnds.getTime() - newStarts.getTime() >
+          res.maxBookingMinutes * 60 * 1000
+      ) {
+        throw new AppException(
+          ErrorCode.BOOKING_DURATION_EXCEEDED,
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+
+      const nextStatus = dto.status ?? b.status;
+      if (OCCUPYING_BOOKING_STATUSES.includes(nextStatus)) {
+        const overlap = await this.repo
+          .createQueryBuilder('b')
+          .where('b.resourceId = :rid', { rid: b.resourceId })
+          .andWhere('b.organizationId = :oid', { oid: organizationId })
+          .andWhere('b.status IN (:...occ)', {
+            occ: OCCUPYING_BOOKING_STATUSES,
+          })
+          .andWhere('b.startsAt < :end', { end: newEnds })
+          .andWhere('b.endsAt > :start', { start: newStarts })
+          .andWhere('b.id != :bid', { bid: id })
+          .getCount();
+        if (overlap > 0) {
+          throw new AppException(
+            ErrorCode.BOOKING_CONFLICT,
+            HttpStatus.CONFLICT,
+          );
+        }
+      }
+
+      b.startsAt = newStarts;
+      b.endsAt = newEnds;
+    }
+
+    if (dto.title !== undefined) {
+      b.title = dto.title.trim();
+    }
+
     if (dto.status !== undefined) {
       b.status = dto.status;
     }
+
+    const timesChanged =
+      (dto.startsAt !== undefined || dto.endsAt !== undefined) &&
+      (b.startsAt.getTime() !== prevStarts.getTime() ||
+        b.endsAt.getTime() !== prevEnds.getTime());
+
     await this.repo.save(b);
+
     if (!wasCancelled && b.status === BookingStatus.CANCELLED) {
       await this.notifications.sendCancelled(b.id);
+    } else if (
+      (b.status === BookingStatus.CONFIRMED ||
+        b.status === BookingStatus.IN_PROGRESS) &&
+      timesChanged
+    ) {
+      await this.notifications.rescheduleScheduledJobs(
+        b.id,
+        b.startsAt,
+        b.endsAt,
+      );
     }
+
     const withResource = await this.repo.findOne({
       where: { id: b.id },
       relations: ['resource', 'user'],
@@ -186,6 +302,15 @@ export class BookingsService {
     }
     if (!isTenantAdmin(user) && b.userId !== user.sub) {
       throw new AppException(ErrorCode.BOOKING_FORBIDDEN, HttpStatus.FORBIDDEN);
+    }
+    if (
+      b.status === BookingStatus.CANCELLED ||
+      b.status === BookingStatus.COMPLETED
+    ) {
+      throw new AppException(
+        ErrorCode.BOOKING_NOT_EDITABLE,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
     }
     b.status = BookingStatus.CANCELLED;
     await this.repo.save(b);

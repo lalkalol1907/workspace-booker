@@ -1,4 +1,4 @@
-import { describe, it, expect, rstest, beforeEach } from '@rstest/core';
+import { describe, it, expect, rstest } from '@rstest/core';
 import { NotificationsService } from './notifications.service';
 
 function createService() {
@@ -24,6 +24,26 @@ describe('NotificationsService', () => {
         { bookingId: 'b-1' },
         { removeOnComplete: true },
       );
+    });
+  });
+
+  describe('scheduleInProgress', () => {
+    it('enqueues a delayed job at startsAt', async () => {
+      const { service, queue } = createService();
+      const startsAt = new Date(Date.now() + 45 * 60 * 1000);
+
+      await service.scheduleInProgress('b-1', startsAt);
+
+      expect(queue.add).toHaveBeenCalledWith(
+        'in_progress',
+        { bookingId: 'b-1' },
+        expect.objectContaining({
+          jobId: 'in-progress-b-1',
+          removeOnComplete: true,
+        }),
+      );
+      const opts = queue.add.mock.calls[0][2];
+      expect(opts.delay).toBeGreaterThanOrEqual(0);
     });
   });
 
@@ -144,6 +164,7 @@ describe('NotificationsService', () => {
       await service.sendCancelled('b-1');
 
       expect(queue.getJob).toHaveBeenCalledWith('reminder-b-1');
+      expect(queue.getJob).toHaveBeenCalledWith('in-progress-b-1');
       expect(queue.getJob).toHaveBeenCalledWith('ending-soon-b-1');
       expect(queue.getJob).toHaveBeenCalledWith('ended-b-1');
       expect(mockJob.remove).toHaveBeenCalled();
@@ -164,6 +185,42 @@ describe('NotificationsService', () => {
         'cancelled',
         { bookingId: 'b-1' },
         { removeOnComplete: true },
+      );
+    });
+  });
+
+  describe('rescheduleScheduledJobs', () => {
+    it('removes delayed jobs then schedules reminder, in_progress, ending_soon, ended', async () => {
+      const { service, queue } = createService();
+      queue.getJob.mockResolvedValue(null);
+      const futureStart = new Date(Date.now() + 2 * 60 * 60 * 1000);
+      const futureEnd = new Date(Date.now() + 3 * 60 * 60 * 1000);
+
+      await service.rescheduleScheduledJobs('b-1', futureStart, futureEnd);
+
+      expect(queue.getJob).toHaveBeenCalledWith('reminder-b-1');
+      expect(queue.getJob).toHaveBeenCalledWith('in-progress-b-1');
+      expect(queue.getJob).toHaveBeenCalledWith('ending-soon-b-1');
+      expect(queue.getJob).toHaveBeenCalledWith('ended-b-1');
+      expect(queue.add).toHaveBeenCalledWith(
+        'reminder',
+        { bookingId: 'b-1' },
+        expect.any(Object),
+      );
+      expect(queue.add).toHaveBeenCalledWith(
+        'in_progress',
+        { bookingId: 'b-1' },
+        expect.any(Object),
+      );
+      expect(queue.add).toHaveBeenCalledWith(
+        'ending_soon',
+        { bookingId: 'b-1' },
+        expect.any(Object),
+      );
+      expect(queue.add).toHaveBeenCalledWith(
+        'ended',
+        { bookingId: 'b-1' },
+        expect.any(Object),
       );
     });
   });

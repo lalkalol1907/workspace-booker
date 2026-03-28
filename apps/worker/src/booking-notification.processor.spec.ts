@@ -67,6 +67,7 @@ const mockBooking = (overrides: Record<string, any> = {}) => ({
 function createProcessor() {
   const bookingRepo = {
     findOne: rstest.fn(),
+    save: rstest.fn().mockResolvedValue(undefined),
   };
   const mailer = {
     sendMail: rstest.fn().mockResolvedValue(undefined),
@@ -173,12 +174,24 @@ describe('BookingNotificationProcessor', () => {
 
       expect(mailer.sendMail).not.toHaveBeenCalled();
     });
+
+    it('sends email when booking is in_progress', async () => {
+      const { processor, bookingRepo, mailer } = createProcessor();
+      bookingRepo.findOne.mockResolvedValue(
+        mockBooking({ status: 'in_progress' }),
+      );
+
+      await processor.process(makeJob('ending_soon'));
+
+      expect(mailer.sendMail).toHaveBeenCalled();
+    });
   });
 
   describe('ended', () => {
-    it('sends email for confirmed booking', async () => {
+    it('sends email for confirmed booking and marks completed', async () => {
       const { processor, bookingRepo, mailer } = createProcessor();
-      bookingRepo.findOne.mockResolvedValue(mockBooking());
+      const b = mockBooking();
+      bookingRepo.findOne.mockResolvedValue(b);
 
       await processor.process(makeJob('ended'));
 
@@ -189,6 +202,8 @@ describe('BookingNotificationProcessor', () => {
           html: expect.stringContaining('<!DOCTYPE html>'),
         }),
       );
+      expect(b.status).toBe('completed');
+      expect(bookingRepo.save).toHaveBeenCalled();
     });
 
     it('skips if booking is cancelled', async () => {
@@ -199,6 +214,65 @@ describe('BookingNotificationProcessor', () => {
 
       await processor.process(makeJob('ended'));
 
+      expect(mailer.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('skips if booking already completed', async () => {
+      const { processor, bookingRepo, mailer } = createProcessor();
+      bookingRepo.findOne.mockResolvedValue(
+        mockBooking({ status: 'completed' }),
+      );
+
+      await processor.process(makeJob('ended'));
+
+      expect(mailer.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('sends email for in_progress booking and marks completed', async () => {
+      const { processor, bookingRepo, mailer } = createProcessor();
+      const b = mockBooking({ status: 'in_progress' });
+      bookingRepo.findOne.mockResolvedValue(b);
+
+      await processor.process(makeJob('ended'));
+
+      expect(mailer.sendMail).toHaveBeenCalled();
+      expect(b.status).toBe('completed');
+      expect(bookingRepo.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('in_progress', () => {
+    it('sets status in_progress when slot is active', async () => {
+      const { processor, bookingRepo, mailer } = createProcessor();
+      const start = new Date(Date.now() - 30_000);
+      const end = new Date(Date.now() + 3600_000);
+      const b = mockBooking({
+        status: 'confirmed',
+        startsAt: start,
+        endsAt: end,
+      });
+      bookingRepo.findOne.mockResolvedValue(b);
+
+      await processor.process(makeJob('in_progress'));
+
+      expect(b.status).toBe('in_progress');
+      expect(bookingRepo.save).toHaveBeenCalled();
+      expect(mailer.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('sets completed when job runs after end', async () => {
+      const { processor, bookingRepo, mailer } = createProcessor();
+      const b = mockBooking({
+        status: 'confirmed',
+        startsAt: new Date(Date.now() - 7200_000),
+        endsAt: new Date(Date.now() - 3600_000),
+      });
+      bookingRepo.findOne.mockResolvedValue(b);
+
+      await processor.process(makeJob('in_progress'));
+
+      expect(b.status).toBe('completed');
+      expect(bookingRepo.save).toHaveBeenCalled();
       expect(mailer.sendMail).not.toHaveBeenCalled();
     });
   });

@@ -2,6 +2,8 @@ import type { BookingStatus } from '@/api/types';
 
 const LABELS: Record<BookingStatus, string> = {
   confirmed: 'Подтверждена',
+  in_progress: 'Идёт сейчас',
+  completed: 'Завершена',
   cancelled: 'Отменена',
 };
 

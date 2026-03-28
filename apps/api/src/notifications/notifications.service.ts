@@ -18,6 +18,23 @@ export class NotificationsService {
     this.logger.debug(`Enqueued "created" for booking ${bookingId}`);
   }
 
+  /** В момент начала брони — перевод в статус «идёт сейчас». */
+  async scheduleInProgress(bookingId: string, startsAt: Date): Promise<void> {
+    const delay = Math.max(0, startsAt.getTime() - Date.now());
+    await this.queue.add(
+      'in_progress',
+      { bookingId },
+      {
+        delay,
+        jobId: `in-progress-${bookingId}`,
+        removeOnComplete: true,
+      },
+    );
+    this.logger.debug(
+      `Scheduled in_progress for booking ${bookingId} in ${Math.round(delay / 1000)}s`,
+    );
+  }
+
   async scheduleReminder(bookingId: string, startsAt: Date): Promise<void> {
     const delay = startsAt.getTime() - FIFTEEN_MINUTES_MS - Date.now();
     if (delay <= 0) {
@@ -92,6 +109,7 @@ export class NotificationsService {
 
   async sendCancelled(bookingId: string): Promise<void> {
     await this.removeJobIfExists(`reminder-${bookingId}`);
+    await this.removeJobIfExists(`in-progress-${bookingId}`);
     await this.removeJobIfExists(`ending-soon-${bookingId}`);
     await this.removeJobIfExists(`ended-${bookingId}`);
     await this.queue.add(
@@ -100,5 +118,22 @@ export class NotificationsService {
       { removeOnComplete: true },
     );
     this.logger.debug(`Enqueued "cancelled" for booking ${bookingId}`);
+  }
+
+  /** Перенос отложенных напоминаний после смены времени брони (без повторной рассылки «создано»). */
+  async rescheduleScheduledJobs(
+    bookingId: string,
+    startsAt: Date,
+    endsAt: Date,
+  ): Promise<void> {
+    await this.removeJobIfExists(`reminder-${bookingId}`);
+    await this.removeJobIfExists(`in-progress-${bookingId}`);
+    await this.removeJobIfExists(`ending-soon-${bookingId}`);
+    await this.removeJobIfExists(`ended-${bookingId}`);
+    await this.scheduleReminder(bookingId, startsAt);
+    await this.scheduleInProgress(bookingId, startsAt);
+    await this.scheduleEndingSoon(bookingId, endsAt);
+    await this.scheduleEnded(bookingId, endsAt);
+    this.logger.debug(`Rescheduled delayed jobs for booking ${bookingId}`);
   }
 }
