@@ -1,11 +1,11 @@
 import { registerAs } from '@nestjs/config';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { Booking } from 'api/entities/booking.entity';
-import { Location } from 'api/entities/location.entity';
-import { Organization } from 'api/entities/organization.entity';
-import { OrganizationHost } from 'api/entities/organization-host.entity';
-import { Resource } from 'api/entities/resource.entity';
-import { User } from 'api/entities/user.entity';
+import { Booking } from '../entities/booking.entity';
+import { Location } from '../entities/location.entity';
+import { Organization } from '../entities/organization.entity';
+import { OrganizationHost } from '../entities/organization-host.entity';
+import { Resource } from '../entities/resource.entity';
+import { User } from '../entities/user.entity';
 
 export interface PostgresConfig {
   url?: string;

@@ -1,17 +1,11 @@
 import { describe, it, expect, rstest } from '@rstest/core';
 
-rstest.mock('api/entities/booking.entity', () => ({ Booking: class {} }));
-rstest.mock('api/entities/user.entity', () => ({ User: class {} }));
-rstest.mock('api/entities/resource.entity', () => ({ Resource: class {} }));
-rstest.mock('api/entities/organization.entity', () => ({ Organization: class {} }));
-rstest.mock('api/entities/organization-host.entity', () => ({
-  OrganizationHost: class {},
-}));
-rstest.mock('api/entities/location.entity', () => ({ Location: class {} }));
-
-/** Без сборки `api` в CI нет `dist/.../booking-status.enum.js` — подменяем enum. */
-rstest.mock('api/common/enums/booking-status.enum', () => ({
-  BookingStatus: { CONFIRMED: 'confirmed', CANCELLED: 'cancelled' },
+/**
+ * Rstest/Rspack тянет все entity и ловит TDZ (циклические импорты). В рантайме worker ок.
+ * Для юнит-теста процессора достаточно заглушки класса Booking.
+ */
+rstest.mock('./entities/booking.entity', () => ({
+  Booking: class Booking {},
 }));
 
 /** Rspack бандлит `ejs` некорректно (renderFile не функция). Процессор тестируем без реального EJS. */

@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { Booking } from 'api/entities/booking.entity';
+import { Booking } from './entities/booking.entity';
 import { BookingNotificationProcessor } from './booking-notification.processor';
 import {
   postgresConfig,

@@ -5,8 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Job } from 'bullmq';
 import { Repository } from 'typeorm';
-import { Booking } from 'api/entities/booking.entity';
-import { BookingStatus } from 'api/common/enums/booking-status.enum';
+import { BookingStatus } from './common/enums/booking-status.enum';
+import { Booking } from './entities/booking.entity';
 import type { MailerConfig } from './config/mailer.config';
 import {
   bookingMailSubject,

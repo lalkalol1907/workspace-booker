@@ -35,17 +35,14 @@ CMD ["node", "dist/main.js"]
 
 FROM base AS worker
 ENV NODE_ENV=production
-# Чтобы require() из apps/api/dist/... находил hoisted-зависимости (typeorm и др.)
-ENV NODE_PATH=/app/node_modules
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY apps/admin/package.json apps/admin/
 COPY apps/worker/package.json apps/worker/
-COPY --from=builder /app/apps/worker/dist ./apps/worker/dist
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
 RUN pnpm install --frozen-lockfile --filter worker --prod
+COPY --from=builder /app/apps/worker/dist ./apps/worker/dist
 WORKDIR /app/apps/worker
 CMD ["node", "dist/main.js"]
 
