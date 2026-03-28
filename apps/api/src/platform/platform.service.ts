@@ -59,6 +59,8 @@ export class PlatformService {
     const raw = [
       this.config.get<string>('PLATFORM_HOST') ?? '',
       this.config.get<string>('PLATFORM_URL') ?? '',
+      this.config.get<string>('LANDING_HOST') ?? '',
+      this.config.get<string>('LANDING_URL') ?? '',
     ];
     const unique = new Set<string>();
     for (const v of raw) {

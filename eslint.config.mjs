@@ -45,7 +45,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/web/**/*.ts', 'apps/admin/**/*.ts'],
+    files: [
+      'apps/web/**/*.ts',
+      'apps/admin/**/*.ts',
+      'apps/landing/**/*.ts',
+      'apps/landing/**/*.tsx',
+    ],
     extends: [
       eslint.configs.recommended,
       ...tseslint.configs.recommendedTypeChecked,

@@ -207,6 +207,23 @@ describe('PlatformService', () => {
         }),
       ).rejects.toMatchObject({ response: { errorCode: 'HOST_RESERVED' } });
     });
+
+    it('rejects reserved landing host', async () => {
+      const { service, config, orgRepo, orgHostRepo } = createService();
+      config.get.mockImplementation((key: string) =>
+        key === 'LANDING_HOST' ? 'landing.example.com' : undefined,
+      );
+      orgRepo.exist.mockResolvedValue(false);
+      orgHostRepo.exist.mockResolvedValue(false);
+
+      await expect(
+        service.createOrganization({
+          name: 'Bad',
+          slug: 'bad',
+          hosts: ['landing.example.com'],
+        }),
+      ).rejects.toMatchObject({ response: { errorCode: 'HOST_RESERVED' } });
+    });
   });
 
   describe('updateOrganization', () => {

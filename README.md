@@ -4,13 +4,14 @@
 
 ## Архитектура
 
-Монорепозиторий (pnpm workspaces) с четырьмя приложениями:
+Монорепозиторий (pnpm workspaces) с пятью приложениями:
 
 ```
 apps/
 ├── api/       NestJS REST API (Fastify, TypeORM, PostgreSQL)
 ├── web/       Vue 3 SPA — интерфейс сотрудников и админов организации
 ├── admin/     Angular 19 SPA — интерфейс платформенных администраторов
+├── landing/   React + Vite — публичный лендинг (отдельный хост `LANDING_HOST` в Docker)
 └── worker/    NestJS Worker — обработка очередей и email-уведомления
 ```
 
@@ -78,6 +79,14 @@ apps/
 | Tailwind CSS 4, `@tailwindcss/postcss`, `.postcssrc.json` | Стили (глобальный `styles.css`) |
 | Karma, Jasmine, `karma-coverage` | Unit-тесты (`ng test`, `ng test --code-coverage`) |
 
+**Landing (`apps/landing`)**
+
+| Технология | Назначение |
+|------------|------------|
+| React 19, Vite 8 | Публичная страница (маркетинг) |
+| Tailwind CSS 4, `@tailwindcss/vite` | Стили |
+| В Docker / nginx | Отдельный `server_name` по переменной `LANDING_HOST` (корень `/`; домен нельзя задать организации) |
+
 **Инфраструктура**
 
 | Технология | Назначение |
@@ -142,6 +151,7 @@ cp apps/api/.env.example apps/api/.env
 | `REDIS_URL`           | Подключение к Redis                         | `redis://localhost:6379`                     |
 | `DEFAULT_TENANT_HOST` | Хост по умолчанию для тенанта               | `localhost`                                  |
 | `PLATFORM_HOST`       | Хост по умолчанию для платформенной админки | `platform.localhost`                         |
+| `LANDING_HOST`        | Хост публичного лендинга (nginx `web`)      | `landing.example.com`                        |
 | `SMTP_HOST`           | SMTP-сервер                                 | `smtp.example.com`                           |
 | `SMTP_PORT`           | Порт SMTP                                   | `587`                                        |
 | `SMTP_USER`           | Логин SMTP                                  |                                              |
@@ -157,6 +167,9 @@ pnpm --filter api run start:dev
 
 # Web
 pnpm --filter web run dev
+
+# Лендинг (порт 5174; в Docker — на хосте из `LANDING_HOST`, см. `.env.example`)
+pnpm --filter landing run dev
 
 # Admin (прокси `/api` → `http://localhost:3000`, см. `apps/admin/proxy.conf.json`)
 pnpm --filter admin run start
@@ -219,8 +232,9 @@ docker compose up -d
 | `redis` | 6379 | Очередь задач |
 
 Nginx маршрутизирует запросы:
-- Основной домен → web SPA (интерфейс организации)
+- Основной домен (default) → web SPA (интерфейс организации)
 - `PLATFORM_HOST` → admin SPA (платформенная панель)
+- `LANDING_HOST` → лендинг React (статика в корне хоста)
 - `/api/*` → API сервер
 
 ## CI/CD

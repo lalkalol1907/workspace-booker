@@ -34,7 +34,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   // Platform
   SLUG_TAKEN: 'Этот slug уже занят другой организацией',
   HOST_TAKEN: 'Один из доменов уже используется другой организацией',
-  HOST_RESERVED: 'Этот домен зарезервирован для платформы',
+  HOST_RESERVED:
+    'Этот домен зарезервирован для платформы, лендинга или служебного хоста',
   PLATFORM_ADMIN_EMAIL_AMBIGUOUS: 'Найдено несколько пользователей с таким email',
 
   // General

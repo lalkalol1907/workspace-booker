@@ -10,6 +10,7 @@ COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY apps/admin/package.json apps/admin/
 COPY apps/worker/package.json apps/worker/
+COPY apps/landing/package.json apps/landing/
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS builder
@@ -17,9 +18,11 @@ COPY apps/api apps/api
 COPY apps/web apps/web
 COPY apps/admin apps/admin
 COPY apps/worker apps/worker
+COPY apps/landing apps/landing
 RUN pnpm --filter api run build
 RUN pnpm --filter web run build
 RUN pnpm --filter admin run build
+RUN pnpm --filter landing run build
 RUN pnpm --filter worker run build
 
 FROM base AS api
@@ -55,5 +58,6 @@ COPY docker/web-entrypoint.sh /web-entrypoint.sh
 RUN chmod +x /web-entrypoint.sh
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 COPY --from=builder /app/apps/admin/dist/admin/browser /usr/share/nginx/admin
+COPY --from=builder /app/apps/landing/dist /usr/share/nginx/landing
 EXPOSE 80
 ENTRYPOINT ["/web-entrypoint.sh"]
