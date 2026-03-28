@@ -134,6 +134,8 @@ export class BookingsService {
     await this.repo.save(b);
     await this.notifications.sendCreated(b.id);
     await this.notifications.scheduleReminder(b.id, b.startsAt);
+    await this.notifications.scheduleEndingSoon(b.id, b.endsAt);
+    await this.notifications.scheduleEnded(b.id, b.endsAt);
     const withRelations = await this.repo.findOne({
       where: { id: b.id },
       relations: ['resource', 'user'],

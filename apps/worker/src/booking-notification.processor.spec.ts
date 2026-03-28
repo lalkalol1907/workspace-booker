@@ -20,6 +20,8 @@ rstest.mock('./mail/render-booking-mail', () => ({
     const subjects: Record<string, string> = {
       created: 'Бронирование подтверждено',
       reminder: 'Напоминание: бронирование через 15 минут',
+      ending_soon: 'Скоро окончание бронирования',
+      ended: 'Бронирование завершилось',
       cancelled: 'Бронирование отменено',
     };
     return subjects[kind] ?? '';
@@ -146,6 +148,62 @@ describe('BookingNotificationProcessor', () => {
       );
 
       await processor.process(makeJob('reminder'));
+
+      expect(mailer.sendMail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('ending_soon', () => {
+    it('sends email for confirmed booking', async () => {
+      const { processor, bookingRepo, mailer } = createProcessor();
+      bookingRepo.findOne.mockResolvedValue(mockBooking());
+
+      await processor.process(makeJob('ending_soon'));
+
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'user@test.com',
+          subject: 'Скоро окончание бронирования',
+          html: expect.stringContaining('<!DOCTYPE html>'),
+        }),
+      );
+    });
+
+    it('skips if booking is cancelled', async () => {
+      const { processor, bookingRepo, mailer } = createProcessor();
+      bookingRepo.findOne.mockResolvedValue(
+        mockBooking({ status: 'cancelled' }),
+      );
+
+      await processor.process(makeJob('ending_soon'));
+
+      expect(mailer.sendMail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('ended', () => {
+    it('sends email for confirmed booking', async () => {
+      const { processor, bookingRepo, mailer } = createProcessor();
+      bookingRepo.findOne.mockResolvedValue(mockBooking());
+
+      await processor.process(makeJob('ended'));
+
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'user@test.com',
+          subject: 'Бронирование завершилось',
+          html: expect.stringContaining('<!DOCTYPE html>'),
+        }),
+      );
+    });
+
+    it('skips if booking is cancelled', async () => {
+      const { processor, bookingRepo, mailer } = createProcessor();
+      bookingRepo.findOne.mockResolvedValue(
+        mockBooking({ status: 'cancelled' }),
+      );
+
+      await processor.process(makeJob('ended'));
 
       expect(mailer.sendMail).not.toHaveBeenCalled();
     });

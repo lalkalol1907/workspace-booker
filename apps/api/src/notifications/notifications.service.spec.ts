@@ -65,6 +65,64 @@ describe('NotificationsService', () => {
     });
   });
 
+  describe('scheduleEndingSoon', () => {
+    it('enqueues a delayed job 15 minutes before endsAt', async () => {
+      const { service, queue } = createService();
+      const endsAt = new Date(Date.now() + 60 * 60 * 1000);
+
+      await service.scheduleEndingSoon('b-1', endsAt);
+
+      expect(queue.add).toHaveBeenCalledWith(
+        'ending_soon',
+        { bookingId: 'b-1' },
+        expect.objectContaining({
+          jobId: 'ending-soon-b-1',
+          removeOnComplete: true,
+        }),
+      );
+      const opts = queue.add.mock.calls[0][2];
+      expect(opts.delay).toBeGreaterThan(0);
+    });
+
+    it('skips when less than 15 minutes remain until end', async () => {
+      const { service, queue } = createService();
+      const endsAt = new Date(Date.now() + 5 * 60 * 1000);
+
+      await service.scheduleEndingSoon('b-1', endsAt);
+
+      expect(queue.add).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('scheduleEnded', () => {
+    it('enqueues a delayed job at endsAt', async () => {
+      const { service, queue } = createService();
+      const endsAt = new Date(Date.now() + 30 * 60 * 1000);
+
+      await service.scheduleEnded('b-1', endsAt);
+
+      expect(queue.add).toHaveBeenCalledWith(
+        'ended',
+        { bookingId: 'b-1' },
+        expect.objectContaining({
+          jobId: 'ended-b-1',
+          removeOnComplete: true,
+        }),
+      );
+      const opts = queue.add.mock.calls[0][2];
+      expect(opts.delay).toBeGreaterThan(0);
+    });
+
+    it('skips when endsAt is already in the past', async () => {
+      const { service, queue } = createService();
+      const past = new Date(Date.now() - 60 * 1000);
+
+      await service.scheduleEnded('b-1', past);
+
+      expect(queue.add).not.toHaveBeenCalled();
+    });
+  });
+
   describe('sendCancelled', () => {
     it('enqueues a cancelled job', async () => {
       const { service, queue } = createService();
@@ -78,7 +136,7 @@ describe('NotificationsService', () => {
       );
     });
 
-    it('removes pending reminder job if it exists', async () => {
+    it('removes pending delayed jobs if they exist', async () => {
       const { service, queue } = createService();
       const mockJob = { remove: rstest.fn().mockResolvedValue(undefined) };
       queue.getJob.mockResolvedValue(mockJob);
@@ -86,6 +144,8 @@ describe('NotificationsService', () => {
       await service.sendCancelled('b-1');
 
       expect(queue.getJob).toHaveBeenCalledWith('reminder-b-1');
+      expect(queue.getJob).toHaveBeenCalledWith('ending-soon-b-1');
+      expect(queue.getJob).toHaveBeenCalledWith('ended-b-1');
       expect(mockJob.remove).toHaveBeenCalled();
       expect(queue.add).toHaveBeenCalledWith(
         'cancelled',

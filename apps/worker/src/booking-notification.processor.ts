@@ -22,6 +22,8 @@ interface BookingJobData {
 const JOB_TO_KIND: Record<string, BookingMailKind | undefined> = {
   created: 'created',
   reminder: 'reminder',
+  ending_soon: 'ending_soon',
+  ended: 'ended',
   cancelled: 'cancelled',
 };
 
@@ -50,9 +52,14 @@ export class BookingNotificationProcessor extends WorkerHost {
       return;
     }
 
-    if (job.name === 'reminder' && booking.status !== BookingStatus.CONFIRMED) {
+    if (
+      (job.name === 'reminder' ||
+        job.name === 'ending_soon' ||
+        job.name === 'ended') &&
+      booking.status !== BookingStatus.CONFIRMED
+    ) {
       this.logger.debug(
-        `Booking ${bookingId} is no longer confirmed, skipping reminder`,
+        `Booking ${bookingId} is no longer confirmed, skipping ${job.name}`,
       );
       return;
     }

@@ -15,7 +15,12 @@ function renderFileAsync(
   });
 }
 
-export type BookingMailKind = 'created' | 'reminder' | 'cancelled';
+export type BookingMailKind =
+  | 'created'
+  | 'reminder'
+  | 'ending_soon'
+  | 'ended'
+  | 'cancelled';
 
 export interface BookingMailViewModel {
   appName: string;
@@ -34,6 +39,8 @@ export interface BookingMailViewModel {
 const SUBJECTS: Record<BookingMailKind, string> = {
   created: 'Бронирование подтверждено',
   reminder: 'Напоминание: бронирование через 15 минут',
+  ending_soon: 'Скоро окончание бронирования',
+  ended: 'Бронирование завершилось',
   cancelled: 'Бронирование отменено',
 };
 
@@ -61,6 +68,20 @@ const KIND_META: Record<
       'Слот снова доступен для других коллег. При необходимости выберите новое время в календаре.',
     badgeLabel: 'Отменено',
     badgeBg: '#64748b',
+  },
+  ending_soon: {
+    headline: 'Скоро окончание слота',
+    intro:
+      'Через 15 минут закончится забронированное время — освободите ресурс или продлите бронь в календаре, если это возможно.',
+    badgeLabel: '15 минут до конца',
+    badgeBg: '#ea580c',
+  },
+  ended: {
+    headline: 'Время бронирования истекло',
+    intro:
+      'Забронированный слот завершён. Ресурс снова доступен другим коллегам.',
+    badgeLabel: 'Завершено',
+    badgeBg: '#475569',
   },
 };
 

@@ -92,6 +92,8 @@ function createService() {
   const notifications = {
     sendCreated: rstest.fn().mockResolvedValue(undefined),
     scheduleReminder: rstest.fn().mockResolvedValue(undefined),
+    scheduleEndingSoon: rstest.fn().mockResolvedValue(undefined),
+    scheduleEnded: rstest.fn().mockResolvedValue(undefined),
     sendCancelled: rstest.fn().mockResolvedValue(undefined),
   };
 
