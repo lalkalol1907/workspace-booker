@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
+import ThemeToggle from './ThemeToggle.vue';
+import { useOrganizationDisplayName } from '@/composables/useOrganizationDisplayName';
 import { useAuthStore } from '@/stores/auth';
 import { useTenantContextStore } from '@/stores/tenant-context';
 import { userInitialsFromDisplayName } from '@/utils/user-initials';
 
 const auth = useAuthStore();
 const tenant = useTenantContextStore();
+const organizationTitle = useOrganizationDisplayName();
 
 const linkClass =
   'block rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground';
@@ -25,8 +28,18 @@ const userInitials = computed(() =>
   <aside
     class="glass-panel hidden w-[272px] shrink-0 flex-col overflow-hidden md:flex"
   >
-    <div class="border-b border-border/70 px-5 py-4 text-sm font-semibold">
-      Навигация
+    <div
+      class="flex items-center justify-between gap-3 border-b border-border/70 px-5 py-4"
+    >
+      <p
+        class="min-w-0 flex-1 truncate text-sm font-semibold leading-snug tracking-tight"
+        :title="organizationTitle"
+      >
+        {{ organizationTitle }}
+      </p>
+      <div class="shrink-0">
+        <ThemeToggle />
+      </div>
     </div>
     <nav class="min-h-0 flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden p-3">
       <RouterLink

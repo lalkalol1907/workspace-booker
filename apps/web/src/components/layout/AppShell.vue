@@ -4,7 +4,6 @@ import { RouterView, useRoute, useRouter } from 'vue-router';
 import Button from '@/components/ui/button/Button.vue';
 import AppBottomNav from './AppBottomNav.vue';
 import AppSidebar from './AppSidebar.vue';
-import AppTopbar from './AppTopbar.vue';
 import { useAuthStore } from '@/stores/auth';
 
 const auth = useAuthStore();
@@ -35,7 +34,6 @@ const showSidebar = computed(
           : '',
       ]"
     >
-      <AppTopbar v-if="showSidebar" />
       <div
         :class="
           showSidebar
