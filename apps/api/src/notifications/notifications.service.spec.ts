@@ -13,6 +13,28 @@ function createService() {
 }
 
 describe('NotificationsService', () => {
+  describe('sendPlatformAdminWelcomeEmail', () => {
+    it('enqueues platform_admin_welcome job', async () => {
+      const { service, queue } = createService();
+
+      await service.sendPlatformAdminWelcomeEmail({
+        email: 'a@test.com',
+        displayName: 'Admin',
+        temporaryPassword: 'secret',
+      });
+
+      expect(queue.add).toHaveBeenCalledWith(
+        'platform_admin_welcome',
+        {
+          email: 'a@test.com',
+          displayName: 'Admin',
+          temporaryPassword: 'secret',
+        },
+        { removeOnComplete: true },
+      );
+    });
+  });
+
   describe('sendCreated', () => {
     it('enqueues a created job', async () => {
       const { service, queue } = createService();

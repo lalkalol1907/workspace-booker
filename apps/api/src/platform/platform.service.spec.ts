@@ -65,20 +65,24 @@ function createService() {
   const config = {
     get: rstest.fn().mockReturnValue(undefined),
   };
+  const notifications = {
+    sendPlatformAdminWelcomeEmail: rstest.fn().mockResolvedValue(undefined),
+  };
 
   const service = new PlatformService(
     orgRepo as any,
     orgHostRepo as any,
     userRepo as any,
     config as any,
+    notifications as any,
   );
-  return { service, orgRepo, orgHostRepo, userRepo, config };
+  return { service, orgRepo, orgHostRepo, userRepo, config, notifications };
 }
 
 describe('PlatformService', () => {
   describe('upsertPlatformAdmin', () => {
     it('creates new super admin when user does not exist', async () => {
-      const { service, userRepo } = createService();
+      const { service, userRepo, notifications } = createService();
       userRepo.find.mockResolvedValue([]);
 
       const result = await service.upsertPlatformAdmin({
@@ -88,6 +92,11 @@ describe('PlatformService', () => {
       expect(result.action).toBe('created');
       expect(result.temporaryPassword).toBeDefined();
       expect(userRepo.save).toHaveBeenCalled();
+      expect(notifications.sendPlatformAdminWelcomeEmail).toHaveBeenCalledWith({
+        email: 'new@test.com',
+        displayName: 'new',
+        temporaryPassword: result.temporaryPassword,
+      });
     });
 
     it('promotes existing non-admin user', async () => {

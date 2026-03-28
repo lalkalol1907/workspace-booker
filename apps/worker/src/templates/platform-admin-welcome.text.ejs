@@ -1,0 +1,16 @@
+<%= appName %> — <%= headline %>
+
+<%= intro %>
+
+Имя: <%= displayName %>
+Email (логин): <%= email %>
+Временный пароль: <%= temporaryPassword %>
+<% if (typeof loginUrl !== 'undefined' && loginUrl) { %>
+
+Вход в панель: <%= loginUrl %>
+<% } %>
+
+Сохраните пароль в надёжном месте. При первом входе потребуется сменить пароль.
+
+—
+<%= appName %>

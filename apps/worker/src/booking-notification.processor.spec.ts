@@ -49,6 +49,33 @@ rstest.mock('./mail/render-booking-mail', () => ({
   }),
 }));
 
+rstest.mock('./mail/render-platform-admin-mail', () => ({
+  buildPlatformAdminWelcomeViewModel: (
+    mail: { appName: string },
+    params: {
+      displayName: string;
+      email: string;
+      temporaryPassword: string;
+    },
+  ) => ({
+    appName: mail.appName,
+    pageTitle: 'Доступ к панели платформы',
+    headline: 'h',
+    intro: 'i',
+    badgeLabel: 'b',
+    badgeBg: '#000',
+    displayName: params.displayName,
+    email: params.email,
+    temporaryPassword: params.temporaryPassword,
+    loginUrl: '',
+  }),
+  platformAdminWelcomeSubject: () => 'Доступ к панели платформы',
+  renderPlatformAdminWelcomeMail: async () => ({
+    html: '<!DOCTYPE html><html><body>pa</body></html>',
+    text: 'TEXT:platform-admin',
+  }),
+}));
+
 import { BookingNotificationProcessor } from './booking-notification.processor';
 
 const BOOKING_ID = 'b-1';
@@ -82,6 +109,7 @@ function createProcessor() {
           pass: '',
           from: 'test@test.com',
           appName: 'Test App',
+          platformLoginUrl: '',
         };
       }
       throw new Error(`unexpected config ${key}`);
@@ -94,7 +122,7 @@ function createProcessor() {
     config as any,
   );
 
-  return { processor, bookingRepo, mailer };
+  return { processor, bookingRepo, mailer, config };
 }
 
 function makeJob(name: string, bookingId = BOOKING_ID) {
@@ -102,6 +130,31 @@ function makeJob(name: string, bookingId = BOOKING_ID) {
 }
 
 describe('BookingNotificationProcessor', () => {
+  describe('platform_admin_welcome', () => {
+    it('sends email with temporary password', async () => {
+      const { processor, bookingRepo, mailer } = createProcessor();
+
+      await processor.process({
+        name: 'platform_admin_welcome',
+        data: {
+          email: 'new-admin@test.com',
+          displayName: 'New Admin',
+          temporaryPassword: 'TempPass123',
+        },
+      } as any);
+
+      expect(bookingRepo.findOne).not.toHaveBeenCalled();
+      expect(mailer.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'new-admin@test.com',
+          subject: 'Доступ к панели платформы',
+          html: expect.stringContaining('<!DOCTYPE html>'),
+          text: expect.stringContaining('TEXT:platform-admin'),
+        }),
+      );
+    });
+  });
+
   describe('created', () => {
     it('sends confirmation email', async () => {
       const { processor, bookingRepo, mailer } = createProcessor();

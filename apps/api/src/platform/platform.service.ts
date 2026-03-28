@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { ErrorCode } from '../common/enums/error-code.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { AppException } from '../common/exceptions/app.exception';
+import { NotificationsService } from '../notifications/notifications.service';
 import { normalizeOrganizationHostsInput } from '../common/utils/organization-hosts';
 import { OrganizationHost } from '../entities/organization-host.entity';
 import { Organization } from '../entities/organization.entity';
@@ -21,6 +22,8 @@ import { UpdatePlatformUserRoleDto } from './dto/update-platform-user-role.dto';
 
 @Injectable()
 export class PlatformService {
+  private readonly log = new Logger(PlatformService.name);
+
   constructor(
     @InjectRepository(Organization)
     private readonly orgRepo: Repository<Organization>,
@@ -29,6 +32,7 @@ export class PlatformService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly config: ConfigService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   private normalizeEnvHost(raw: string): string {
@@ -114,6 +118,17 @@ export class PlatformService {
         mustChangePassword: true,
       });
       await this.userRepo.save(user);
+      try {
+        await this.notifications.sendPlatformAdminWelcomeEmail({
+          email: user.email,
+          displayName: user.displayName,
+          temporaryPassword: tempPlain,
+        });
+      } catch (e) {
+        this.log.warn(
+          `Could not enqueue platform admin welcome email for ${user.email}: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
       return {
         userId: user.id,
         email: user.email,

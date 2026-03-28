@@ -18,6 +18,20 @@ export class NotificationsService {
     this.logger.debug(`Enqueued "created" for booking ${bookingId}`);
   }
 
+  /** Письмо с временным паролем новому платформенному администратору. */
+  async sendPlatformAdminWelcomeEmail(payload: {
+    email: string;
+    displayName: string;
+    temporaryPassword: string;
+  }): Promise<void> {
+    await this.queue.add(
+      'platform_admin_welcome',
+      payload,
+      { removeOnComplete: true },
+    );
+    this.logger.debug(`Enqueued platform_admin_welcome for ${payload.email}`);
+  }
+
   /** В момент начала брони — перевод в статус «идёт сейчас». */
   async scheduleInProgress(bookingId: string, startsAt: Date): Promise<void> {
     const delay = Math.max(0, startsAt.getTime() - Date.now());

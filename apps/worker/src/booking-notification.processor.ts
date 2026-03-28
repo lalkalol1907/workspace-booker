@@ -14,9 +14,20 @@ import {
   renderBookingMail,
   type BookingMailKind,
 } from './mail/render-booking-mail';
+import {
+  buildPlatformAdminWelcomeViewModel,
+  platformAdminWelcomeSubject,
+  renderPlatformAdminWelcomeMail,
+} from './mail/render-platform-admin-mail';
 
 interface BookingJobData {
   bookingId: string;
+}
+
+interface PlatformAdminWelcomeJobData {
+  email: string;
+  displayName: string;
+  temporaryPassword: string;
 }
 
 const JOB_TO_KIND: Record<string, BookingMailKind | undefined> = {
@@ -40,8 +51,17 @@ export class BookingNotificationProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<BookingJobData>): Promise<void> {
-    const { bookingId } = job.data;
+  async process(
+    job: Job<BookingJobData | PlatformAdminWelcomeJobData>,
+  ): Promise<void> {
+    if (job.name === 'platform_admin_welcome') {
+      await this.sendPlatformAdminWelcomeMail(
+        job as Job<PlatformAdminWelcomeJobData>,
+      );
+      return;
+    }
+
+    const { bookingId } = job.data as BookingJobData;
     const booking = await this.bookingRepo.findOne({
       where: { id: bookingId },
       relations: ['user', 'resource'],
@@ -143,6 +163,26 @@ export class BookingNotificationProcessor extends WorkerHost {
     this.logger.log(
       `Sent "${job.name}" email to ${userEmail} for booking ${bookingId}`,
     );
+  }
+
+  private async sendPlatformAdminWelcomeMail(
+    job: Job<PlatformAdminWelcomeJobData>,
+  ): Promise<void> {
+    const data = job.data;
+    const mail = this.config.getOrThrow<MailerConfig>('mailer');
+    const viewModel = buildPlatformAdminWelcomeViewModel(mail, {
+      displayName: data.displayName,
+      email: data.email,
+      temporaryPassword: data.temporaryPassword,
+    });
+    const { html, text } = await renderPlatformAdminWelcomeMail(viewModel);
+    await this.mailer.sendMail({
+      to: data.email,
+      subject: platformAdminWelcomeSubject(),
+      html,
+      text,
+    });
+    this.logger.log(`Sent platform_admin_welcome email to ${data.email}`);
   }
 
   private async applyInProgressStatus(booking: Booking): Promise<void> {
